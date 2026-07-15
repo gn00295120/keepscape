@@ -74,7 +74,7 @@ describe("human source review", () => {
       humanRole: "language-review",
     });
     expect(reviewed.scenes[0].sourceIds).toContain("human-interaction-copy-review");
-    expect(reviewed.buildEvidence.tests.some((test) => test.name === "Post-Codex language gate")).toBe(true);
+    expect(reviewed.buildEvidence.tests.some((test) => test.name === "Final interaction-language gate")).toBe(true);
     expect(reviewedAgain.sources.filter((source) => source.id === "human-interaction-copy-review")).toHaveLength(1);
     expect(exhibitManifestSchema.safeParse(reviewedAgain).success).toBe(true);
   });

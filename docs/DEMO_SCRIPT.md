@@ -33,17 +33,17 @@ the build receipt gains a human confirmation source.
 
 **Narration:** “Before build, the storyteller must confirm or preserve every uncertainty and review every displayed
 claim and story field against the sources. Confirmation becomes provenance; model confidence never does. The
-final Codex mechanic, targets or order, and interaction wording are also shown for approval before entry.”
+final built mechanic, targets or order, and interaction wording are also shown for approval before entry.”
 
 ## 1:09–1:30 — Codex builds and verifies
 
 **Visual:** Build pipeline animates through interaction design and the visible replay trace; hold on Build
 evidence, then cut briefly to the spatial-plan validator and its tests in the repository.
 
-**Narration:** “Live Codex returns a typed interaction, an allowlisted preset, and the existing photo IDs in
-display order from an isolated no-network workspace. The host requires the exact photo set, rebuilds canonical
-slots, and revalidates every reference and the final schema. This public demo is a verified replay, not a
-disguised live run.”
+**Narration:** “Live Codex sees no story prose or media—only opaque tokens—and can return no free text. It
+confirms the approved mechanic and chooses an allowlisted spatial preset and photo-token order. The host requires
+exact sets, preserves copy and sequence order, rebinds IDs, rebuilds canonical slots, and validates the final
+schema. This public demo is a verified replay, not a disguised live run.”
 
 ## 1:30–2:07 — Emotional reveal
 
@@ -66,9 +66,9 @@ story. It is the same safe runtime, but a different typed interaction shaped by 
 
 **Visual:** Fast montage of decision log, parallel Codex threads, tests, responsive view, and repository.
 
-**Narration:** “GPT-5.6 powers the strict source-linked blueprint. Codex supplies the bounded interaction and
-photo-order plan in live mode, and was also the engineering partner that implemented, tested, and visually
-refined Keepscape during Build Week.”
+**Narration:** “GPT-5.6 powers the strict source-linked blueprint. Codex compiles its reviewed mechanic through a
+prose-free token boundary, supplies the bounded spatial plan, and was also the engineering partner that
+implemented, tested, and visually refined Keepscape during Build Week.”
 
 ## 2:49–2:55 — Close
 

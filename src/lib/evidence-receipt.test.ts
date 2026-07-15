@@ -17,13 +17,14 @@ describe("checked-in live Codex evidence", () => {
     };
     const scene = nightMarketExhibit.scenes[0];
 
-    expect(receipt).toMatchObject({ receiptVersion: "1.1", mode: "live" });
+    expect(receipt).toMatchObject({ receiptVersion: "1.2", mode: "live" });
     expect(receipt.spatialPlan).toEqual({
       enabled: true,
       preset: "memory-corridor",
       orderedPhotoSourceIds: scene.spatial?.planes.map((plane) => plane.sourceId),
     });
     expect(receipt.codexTests).toEqual(expect.arrayContaining([
+      expect.objectContaining({ name: "Opaque Codex boundary", status: "passed" }),
       expect.objectContaining({ name: "Spatial plan allowlist", status: "passed" }),
       expect.objectContaining({ name: "Post-build schema", status: "passed" }),
     ]));

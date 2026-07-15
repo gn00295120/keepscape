@@ -19,14 +19,15 @@ sources into an allowlisted diorama.
 This judge archive uses AI-generated fictional photos and synthetic narration—not family scans or a reconstructed
 place. Sources support three lanterns, not bicycle ownership. A person must preserve or confirm that uncertainty
 and review every displayed claim and story field. Confirmation becomes provenance; model confidence never does.
-The final Codex mechanic, targets or order, and interaction wording are also shown for approval before entry.
+The final built mechanic, targets or order, and interaction wording are also shown for approval before entry.
 
 ## 04 — Codex and the host gate
 
-In a live build, Codex returns a typed interaction, an allowlisted preset, and existing photo IDs in display order
-from an isolated, no-network workspace. The host requires the exact photo set, applies canonical slots, rebinds
-references, and validates the schema. These are structural checks; a human gate reviews whether wording is
-faithful. This judge path shows a verified replay, its actual fallback trace, and a redacted live Codex SDK receipt.
+In a live build, Codex sees no story prose or media—only opaque tokens and enums—and can return no free text. It
+confirms the approved mechanic and chooses an allowlisted spatial preset and photo-token order. The host requires
+exact sets, preserves copy and sequence order, rebinds IDs, applies canonical slots, and validates the schema.
+These are structural checks; a human gate reviews faithfulness. This judge path shows a verified replay, its
+actual fallback trace, and a redacted live Codex SDK receipt.
 
 ## 05 — Lantern Lane
 
@@ -45,7 +46,7 @@ a repair ritual—not a reskinned slideshow, but an interaction shaped by the ev
 ## 07 — Engineering evidence
 
 Codex also built Keepscape with us. The public repository records discarded ideas, human decisions, the source
-contract, fifty-nine unit tests, four browser-test executions, desktop and mobile visual QA, and a
+contract, sixty-two unit tests, four browser-test executions, desktop and mobile visual QA, and a
 redacted live Codex receipt. The hosted judge path is credential-free.
 
 ## 08 — Close

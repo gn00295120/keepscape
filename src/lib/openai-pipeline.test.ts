@@ -10,14 +10,17 @@ import {
   buildExhibit,
   compileCodexBuildReport,
   compileBlueprint,
+  createOpaqueCodexProjection,
   createBlueprint,
   exhibitBlueprintSchema,
+  rebindOpaqueCodexReport,
   type ExhibitBlueprint,
 } from "@/lib/openai-pipeline";
 import { bicycleRepairExhibit, nightMarketExhibit } from "@/lib/sample-exhibits";
 
 const codexRunMock = vi.hoisted(() => vi.fn());
 const codexConstructorMock = vi.hoisted(() => vi.fn());
+const codexStartThreadMock = vi.hoisted(() => vi.fn());
 
 vi.mock("@openai/codex-sdk", () => ({
   Codex: class {
@@ -25,7 +28,8 @@ vi.mock("@openai/codex-sdk", () => ({
       codexConstructorMock(options);
     }
 
-    startThread() {
+    startThread(options: unknown) {
+      codexStartThreadMock(options);
       return { run: codexRunMock };
     }
   },
@@ -45,13 +49,14 @@ function codexReportFor(
     orderedPhotoSourceIds: string[];
   },
 ) {
+  const scene = manifest.scenes[0];
   return {
     interaction: {
-      kind: "collect" as const,
-      prompt: "Collect the three cited details.",
-      hotspotIds: manifest.scenes[0].hotspots.slice(0, 3).map((hotspot) => hotspot.id),
-      completionMessage: "All cited details were collected.",
-      retryMessage: "Try the cited order again.",
+      kind: scene.interaction.kind,
+      hotspotIds:
+        scene.interaction.kind === "collect"
+          ? scene.interaction.targetHotspotIds
+          : scene.interaction.stepHotspotIds,
     },
     spatialPlan,
   };
@@ -60,6 +65,7 @@ function codexReportFor(
 beforeEach(() => {
   codexRunMock.mockReset();
   codexConstructorMock.mockReset();
+  codexStartThreadMock.mockReset();
 });
 
 describe("blueprint boundary", () => {
@@ -361,6 +367,126 @@ describe("Codex build boundary", () => {
     expect(result.trace[0]).toMatchObject({ agent: "Codex", status: "fallback" });
   });
 
+  it("projects only fixed opaque tokens and enums across the Codex boundary", () => {
+    const visitorMarker = "VISITOR_TEXT_MUST_NEVER_REACH_CODEX";
+    const visitorManifest = structuredClone(reviewedNightMarketExhibit);
+    visitorManifest.title = visitorMarker;
+    visitorManifest.sources[0].label = visitorMarker;
+    visitorManifest.sources[0].assetPath = visitorMarker;
+    visitorManifest.sources[0].excerpt = visitorMarker;
+    visitorManifest.claims[0].text = visitorMarker;
+    visitorManifest.scenes[0].narration = visitorMarker;
+    visitorManifest.scenes[0].hotspots[0].title = visitorMarker;
+    const previousHotspotId = visitorManifest.scenes[0].hotspots[0].id;
+    visitorManifest.scenes[0].hotspots[0].id = visitorMarker;
+    if (visitorManifest.scenes[0].interaction.kind !== "collect") {
+      throw new Error("The night-market fixture must use a collect interaction.");
+    }
+    visitorManifest.scenes[0].interaction.targetHotspotIds =
+      visitorManifest.scenes[0].interaction.targetHotspotIds.map((id) =>
+        id === previousHotspotId ? visitorMarker : id,
+      );
+    const parsed = exhibitManifestSchema.parse(visitorManifest);
+    const projection = createOpaqueCodexProjection(parsed);
+    const serialized = JSON.stringify(projection.packet);
+
+    expect(serialized).not.toContain(visitorMarker);
+    for (const hotspot of parsed.scenes[0].hotspots) expect(serialized).not.toContain(hotspot.id);
+    for (const plane of parsed.scenes[0].spatial?.planes ?? []) expect(serialized).not.toContain(plane.sourceId);
+
+    const stringValues: string[] = [];
+    const visit = (value: unknown) => {
+      if (typeof value === "string") stringValues.push(value);
+      else if (Array.isArray(value)) value.forEach(visit);
+      else if (value && typeof value === "object") Object.values(value).forEach(visit);
+    };
+    visit(projection.packet);
+    expect(
+      stringValues.every(
+        (value) =>
+          value === "1" ||
+          value === "collect" ||
+          value === "sequence" ||
+          value === "memory-corridor" ||
+          value === "gallery-arc" ||
+          value === "tabletop" ||
+          /^hotspot-[1-6]$/.test(value) ||
+          /^photo-[1-5]$/.test(value),
+      ),
+    ).toBe(true);
+
+    expect(() =>
+      rebindOpaqueCodexReport(projection, {
+        interaction: { kind: "collect", hotspotTokens: ["hotspot-1", "hotspot-2", "HOST_SECRET"] },
+        spatialPlan: {
+          enabled: true,
+          preset: "memory-corridor",
+          orderedPhotoTokens: ["photo-1", "photo-2", "photo-3"],
+        },
+      }),
+    ).toThrow(/opaque hotspot/i);
+  });
+
+  it("requires the exact reviewed opaque mechanic and token sets", () => {
+    const projection = createOpaqueCodexProjection(reviewedNightMarketExhibit);
+    const valid = {
+      interaction: {
+        kind: "collect" as const,
+        hotspotTokens: projection.packet.interaction.orderedHotspotTokens,
+      },
+      spatialPlan: {
+        enabled: true,
+        preset: "memory-corridor" as const,
+        orderedPhotoTokens: projection.packet.spatialPlan.orderedPhotoTokens,
+      },
+    };
+
+    expect(() => rebindOpaqueCodexReport(projection, valid)).not.toThrow();
+    expect(() =>
+      rebindOpaqueCodexReport(projection, {
+        ...valid,
+        interaction: { ...valid.interaction, kind: "sequence" },
+      }),
+    ).toThrow(/interaction kind/i);
+    expect(() =>
+      rebindOpaqueCodexReport(projection, {
+        ...valid,
+        interaction: {
+          ...valid.interaction,
+          hotspotTokens: ["hotspot-1", "hotspot-1", "hotspot-3"],
+        },
+      }),
+    ).toThrow(/exactly once/i);
+    expect(() =>
+      rebindOpaqueCodexReport(projection, {
+        ...valid,
+        interaction: { ...valid.interaction, hotspotTokens: ["hotspot-1", "hotspot-2"] },
+      }),
+    ).toThrow();
+    expect(() =>
+      rebindOpaqueCodexReport(projection, {
+        ...valid,
+        spatialPlan: {
+          ...valid.spatialPlan,
+          orderedPhotoTokens: ["photo-1", "photo-1", "photo-3"],
+        },
+      }),
+    ).toThrow(/exactly once/i);
+  });
+
+  it("does not let opaque Codex output reorder a reviewed sequence", () => {
+    const projection = createOpaqueCodexProjection(bicycleRepairExhibit);
+    expect(() =>
+      rebindOpaqueCodexReport(projection, {
+        interaction: {
+          kind: "sequence",
+          hotspotTokens: [...projection.packet.interaction.orderedHotspotTokens].reverse(),
+        },
+        spatialPlan: { enabled: false, preset: "tabletop", orderedPhotoTokens: [] },
+      }),
+    ).toThrow(/reorder/i);
+  });
+
   it("compiles an allowlisted photo order and preset while rebinding legacy anchors", () => {
     const legacyManifest = structuredClone(nightMarketExhibit);
     const legacySpatial = legacyManifest.scenes[0].spatial;
@@ -500,7 +626,7 @@ describe("Codex build boundary", () => {
     ).toThrow(/not part of scene/i);
   });
 
-  it("rejects unreviewed free-text receipt fields from the Codex boundary", () => {
+  it("rejects every free-text field from the Codex boundary", () => {
     const spatial = nightMarketExhibit.scenes[0].spatial;
     if (!spatial) throw new Error("Night market fixture requires a spatial scene.");
     const report = codexReportFor(nightMarketExhibit, {
@@ -512,7 +638,13 @@ describe("Codex build boundary", () => {
     expect(() =>
       compileCodexBuildReport(
         nightMarketExhibit,
-        { ...report, summary: "Unreviewed model-authored receipt prose." },
+        {
+          ...report,
+          interaction: {
+            ...report.interaction,
+            prompt: "Attempted arbitrary model-authored output.",
+          },
+        },
         "codex-test via Codex SDK",
       ),
     ).toThrow();
@@ -577,12 +709,38 @@ describe("Codex build boundary", () => {
   it("returns a live receipt with the validated spatial plan", async () => {
     const spatial = nightMarketExhibit.scenes[0].spatial;
     if (!spatial) throw new Error("Night market fixture requires a spatial scene.");
+    const projection = createOpaqueCodexProjection(reviewedNightMarketExhibit);
     const report = codexReportFor(reviewedNightMarketExhibit, {
       enabled: true,
       preset: "gallery-arc",
       orderedPhotoSourceIds: [...spatial.planes.map((plane) => plane.sourceId)].reverse(),
     });
-    codexRunMock.mockResolvedValueOnce({ finalResponse: JSON.stringify(report) });
+    const opaqueReport = {
+      interaction: {
+        kind: "collect" as const,
+        hotspotTokens: projection.packet.interaction.orderedHotspotTokens,
+      },
+      spatialPlan: {
+        enabled: true,
+        preset: "gallery-arc" as const,
+        orderedPhotoTokens: [...projection.packet.spatialPlan.orderedPhotoTokens].reverse(),
+      },
+    };
+    codexRunMock.mockImplementationOnce(async () => {
+      const threadOptions = codexStartThreadMock.mock.calls[0]?.[0] as { workingDirectory?: string };
+      if (!threadOptions.workingDirectory) throw new Error("The Codex test did not receive a workspace.");
+      const [{ readFile, readdir }, { join }] = await Promise.all([
+        import("node:fs/promises"),
+        import("node:path"),
+      ]);
+      expect(await readdir(threadOptions.workingDirectory)).toEqual(["codex-input.json"]);
+      const packet = await readFile(join(threadOptions.workingDirectory, "codex-input.json"), "utf8");
+      expect(JSON.parse(packet)).toEqual(projection.packet);
+      expect(packet).not.toContain(reviewedNightMarketExhibit.title);
+      expect(packet).not.toContain(reviewedNightMarketExhibit.scenes[0].hotspots[0].id);
+      expect(packet).not.toContain(reviewedNightMarketExhibit.sources[0].id);
+      return { finalResponse: JSON.stringify(opaqueReport) };
+    });
 
     const result = await buildExhibit(
       { manifest: reviewedNightMarketExhibit, live: true },
@@ -591,8 +749,9 @@ describe("Codex build boundary", () => {
 
     expect(result.mode).toBe("live");
     expect(result.manifest.scenes[0].spatial?.preset).toBe("gallery-arc");
+    expect(result.manifest.scenes[0].interaction).toEqual(reviewedNightMarketExhibit.scenes[0].interaction);
     expect(result.spatialPlan).toEqual(report.spatialPlan);
-    expect(result.trace[0].action).toContain("bounded spatial plan");
+    expect(result.trace[0].action).toContain("bounded spatial");
     expect(result.manifest.buildEvidence.tests).toEqual(
       expect.arrayContaining([expect.objectContaining({ name: "Spatial plan allowlist" })]),
     );
@@ -607,18 +766,63 @@ describe("Codex build boundary", () => {
     expect(codexOptions.env?.CODEX_HOME).toMatch(/keepscape-codex-home-/);
     expect(codexOptions.env?.HOME).toBe(codexOptions.env?.CODEX_HOME);
     expect(codexOptions.env).not.toHaveProperty("OPENAI_API_KEY");
+    const threadOptions = codexStartThreadMock.mock.calls[0]?.[0] as { sandboxMode?: string };
+    expect(threadOptions.sandboxMode).toBe("read-only");
+    const [prompt, runOptions] = codexRunMock.mock.calls[0] as [
+      string,
+      {
+        outputSchema?: {
+          properties?: {
+            interaction?: {
+              properties?: {
+                kind?: { enum?: string[] };
+                hotspotTokens?: { minItems?: number; maxItems?: number; items?: { enum?: string[] } };
+              };
+            };
+            spatialPlan?: {
+              properties?: {
+                enabled?: { enum?: boolean[] };
+                orderedPhotoTokens?: { minItems?: number; maxItems?: number; items?: { enum?: string[] } };
+              };
+            };
+          };
+        };
+      },
+    ];
+    expect(prompt).not.toContain(reviewedNightMarketExhibit.title);
+    expect(prompt).not.toContain(reviewedNightMarketExhibit.sources[0].id);
+    const interactionSchema = runOptions.outputSchema?.properties?.interaction?.properties;
+    expect(interactionSchema?.kind?.enum).toEqual(["collect"]);
+    expect(interactionSchema?.hotspotTokens?.items?.enum).toEqual(
+      projection.packet.interaction.orderedHotspotTokens,
+    );
+    expect(interactionSchema?.hotspotTokens?.minItems).toBe(
+      projection.packet.interaction.orderedHotspotTokens.length,
+    );
+    expect(interactionSchema?.hotspotTokens?.maxItems).toBe(
+      projection.packet.interaction.orderedHotspotTokens.length,
+    );
+    const spatialSchema = runOptions.outputSchema?.properties?.spatialPlan?.properties;
+    expect(spatialSchema?.enabled?.enum).toEqual([true]);
+    expect(spatialSchema?.orderedPhotoTokens?.items?.enum).toEqual(
+      projection.packet.spatialPlan.orderedPhotoTokens,
+    );
+    expect(spatialSchema?.orderedPhotoTokens?.minItems).toBe(
+      projection.packet.spatialPlan.orderedPhotoTokens.length,
+    );
+    expect(JSON.stringify(runOptions.outputSchema)).not.toContain(reviewedNightMarketExhibit.title);
+    expect(JSON.stringify(runOptions.outputSchema)).not.toContain(reviewedNightMarketExhibit.sources[0].id);
   });
 
-  it("falls back to the validated manifest when Codex returns an invalid spatial plan", async () => {
-    const invalidReport = codexReportFor(reviewedNightMarketExhibit, {
-      enabled: true,
-      preset: "memory-corridor",
-      orderedPhotoSourceIds: [
-        "night-photo-left-lantern",
-        "night-photo-center-lantern",
-        "missing-photo",
-      ],
-    });
+  it("falls back to the validated manifest when Codex returns an invalid opaque token", async () => {
+    const invalidReport = {
+      interaction: { kind: "collect", hotspotTokens: ["hotspot-1", "hotspot-2", "HOST_SECRET"] },
+      spatialPlan: {
+        enabled: true,
+        preset: "memory-corridor",
+        orderedPhotoTokens: ["photo-1", "photo-2", "photo-3"],
+      },
+    };
     codexRunMock.mockResolvedValueOnce({ finalResponse: JSON.stringify(invalidReport) });
 
     const result = await buildExhibit(
@@ -627,7 +831,7 @@ describe("Codex build boundary", () => {
     );
 
     expect(result.mode).toBe("demo");
-    expect(result.reason).toContain("isolated Codex build was unavailable");
+    expect(result.reason).toContain("opaque-token Codex build was unavailable");
     expect(result.manifest).toEqual(reviewedNightMarketExhibit);
     expect(result.trace[0]).toMatchObject({ agent: "Codex", status: "fallback" });
   });

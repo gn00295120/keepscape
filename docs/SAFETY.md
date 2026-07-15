@@ -32,9 +32,9 @@ movement and plane placement.
 The manifest schema checks all claim, source, hotspot, and interaction references. A missing reference fails the
 build rather than degrading to uncited prose. These checks prove structural integrity, not whether a sentence is
 historically true. Before build, a person must resolve every uncertain claim and approve every displayed
-claim and all GPT-authored exhibit, scene, hotspot, and interaction-draft copy against the listed sources. After
-Codex compiles the interaction, its final prompt and completion/retry wording is displayed for human approval
-before entry.
+claim and all GPT-authored exhibit, scene, hotspot, and interaction-draft copy against the listed sources. Codex
+never receives or authors that prose; after its opaque structural compile, the preserved final prompt and
+completion/retry wording is displayed for human approval before entry.
 
 ## Personhood boundaries
 
@@ -54,19 +54,25 @@ When enabled:
 
 1. GPT-5.6's strict source-linked blueprint is treated as untrusted data, not executable instruction. It contains
    claims, hotspots, source references, and narrative copy—not spatial geometry or shared cross-photo anchors.
-2. Codex receives an isolated workspace, `workspace-write` sandbox, no network, and no approval escalation. Each
-   run also gets an ephemeral `CODEX_HOME`, a minimal subprocess environment, no global MCP/config state, and a
-   shell policy that inherits no environment variables.
+2. The host projects the reviewed interaction into opaque `hotspot-*` and `photo-*` tokens. No visitor prose,
+   source media, source labels, original IDs, claims, excerpts, or asset paths enter the Codex workspace or
+   prompt. Token maps remain only in host memory.
 3. Before Codex runs, the host compiles three to five existing photo source IDs into a safe diorama with
    canonical plane slots.
-4. Codex returns a typed interaction and a minimal spatial plan: `enabled`, an allowlisted `preset`, and
-   `orderedPhotoSourceIds`. It cannot return CSS, transforms, shaders, or coordinates.
-5. The host requires known hotspot IDs and exactly the existing spatial photo-source set, applies canonical
-   slots, rebinds plane references, and runs final schema and referential-integrity validation.
-6. The browser renders the resulting typed values with host-authored CSS presets; it never evaluates generated
+4. Codex runs with `read-only` sandbox mode, no network, no approval escalation, an ephemeral `CODEX_HOME`, a
+   minimal subprocess environment, no global MCP/config state, and no inherited shell variables. The SDK sandbox
+   is not a VM and is not claimed to provide host-read isolation.
+5. A per-run output schema permits only the already reviewed mechanic kind, exact opaque token enums, the
+   required spatial-enabled boolean, and an allowlisted preset. It has no model-authored prompt, completion,
+   retry, summary, CSS, transform, shader, coordinate, path, or other free-text field.
+6. The host rejects unknown, duplicated, missing, or extra tokens; mechanic changes; sequence reordering; and
+   spatial enablement changes. It then rebinds tokens to the original IDs, preserves the already reviewed copy,
+   applies canonical slots, and runs final schema and referential-integrity validation.
+7. The browser renders the resulting typed values with host-authored CSS presets; it never evaluates generated
    source with `eval` or `Function`.
-7. After the turn, validated output stays in memory; the host performs no fixed-name writes inside the
-   agent-writable workspace. Both the workspace and isolated Codex home are deleted in `finally`.
+8. After the turn, validated output stays in memory. Both the temporary workspace and isolated Codex home are
+   deleted in `finally`. A container or VM is required before broadening the agent boundary beyond this opaque,
+   enum-only protocol.
 
 ## Data handling
 

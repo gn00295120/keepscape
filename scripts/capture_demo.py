@@ -303,11 +303,10 @@ def capture(browser: Browser) -> None:
         goto_deployed_app(page)
         shot_started = time.monotonic()
         glide_click(page, page.get_by_role("button", name="Enter Lantern Lane"))
+        page.get_by_role("heading", name="Keep the memory. Question the guess.").wait_for()
         pause(page, 4)
         page.mouse.move(470, 610, steps=24)
         pause(page, 3)
-        glide_click(page, page.get_by_role("button", name="Open source desk").first)
-        page.get_by_role("heading", name="Keep the memory. Question the guess.").wait_for()
         pause(page, 7)
         save_clip(context, page, "02-promise", shot_started)
 

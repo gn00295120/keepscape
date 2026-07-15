@@ -167,8 +167,8 @@ export function recordSourceDeskReview(
   });
 }
 
-/** Records the person's final review of Codex-authored interaction-state copy.
- * The copy is constrained not to add facts, but semantic approval remains human. */
+/** Records the person's final review of the built interaction state in either
+ * live or validated-fallback mode. Semantic approval remains human. */
 export function recordInteractionCopyReview(manifest: ExhibitManifest): ExhibitManifest {
   if (manifest.sources.some((source) => source.id === INTERACTION_COPY_REVIEW_SOURCE_ID)) {
     return structuredClone(manifest);
@@ -183,7 +183,7 @@ export function recordInteractionCopyReview(manifest: ExhibitManifest): ExhibitM
         kind: "human" as const,
         humanRole: "language-review" as const,
         label: "Storyteller interaction-language review · build trail",
-        excerpt: "The storyteller reviewed the final Codex mechanic, target set or order, prompt, and completion/retry copy before entering the exhibit.",
+        excerpt: "The storyteller reviewed the final built mechanic, target set or order, and preserved prompt and completion/retry copy before entering the exhibit.",
       },
     ],
     scenes: manifest.scenes.map((scene) => ({
@@ -196,7 +196,7 @@ export function recordInteractionCopyReview(manifest: ExhibitManifest): ExhibitM
         ...manifest.buildEvidence.agents,
         {
           name: "Final interaction-language review",
-          role: "Reviewed the Codex-authored mechanic, target set or order, and interaction-state wording after compilation.",
+          role: "Reviewed the final built mechanic, target set or order, and preserved interaction-state wording before launch.",
           result: "The displayed mechanic, targets/order, prompt, and completion/retry copy were explicitly approved before launch.",
           status: "reviewed" as const,
         },
@@ -204,8 +204,8 @@ export function recordInteractionCopyReview(manifest: ExhibitManifest): ExhibitM
       tests: [
         ...manifest.buildEvidence.tests,
         {
-          name: "Post-Codex language gate",
-          detail: "A durable human review source was attached after interaction compilation.",
+          name: "Final interaction-language gate",
+          detail: "A durable human review source was attached after the live or validated-fallback build attempt.",
           status: "passed" as const,
         },
       ],

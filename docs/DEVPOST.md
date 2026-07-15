@@ -34,9 +34,10 @@ strict source-linked story blueprint containing claims, hotspots, and narrative 
 shared cross-photo anchors. The host first compiles the three to five photo sources into a safe diorama. The
 storyteller must then confirm or deliberately preserve every uncertain claim and review every displayed claim
 and GPT-authored story field. A text-only note never masquerades as audio or receives a fabricated timecode.
-Codex returns a typed interaction and bounded spatial plan; the host validates those structures without
-pretending to judge historical truth. The final mechanic, target set or order, prompt, and completion/retry copy
-are shown for human approval before entry.
+The host converts the reviewed mechanic and spatial sources into opaque tokens. Codex returns only the approved
+mechanic kind/token set plus a bounded spatial plan—no story prose—then the host rebinds and validates those
+structures without pretending to judge historical truth. The final mechanic, target set or order, preserved
+prompt, and completion/retry copy are shown for human approval before entry.
 
 One story becomes a three-photo night-market corridor that visitors can move through and explore. Another
 becomes a hands-on repair ritual where the order itself carries meaning. The result is not a reskinned
@@ -56,14 +57,16 @@ or reconstruction. Keepscape never clones a voice, recreates a person, or presen
   plane slots. Presentation coordinates are labeled generated and never treated as source evidence.
 - A **human grounding desk** blocks build until every uncertain claim is confirmed or preserved and every
   displayed claim and GPT-authored story field is reviewed against the sources.
-- A **post-Codex language gate** shows the final mechanic, targets or order, prompt, and completion/retry wording;
+- A **final-build language gate** shows the final mechanic, targets or order, prompt, and completion/retry wording;
   entering records explicit human approval as provenance.
-- The **Codex SDK** works inside an isolated, no-network workspace with an ephemeral home, sanitized environment,
-  and no inherited shell variables. It returns a typed interaction plus a bounded spatial plan: an allowlisted
-  preset and an ordered list of existing photo source IDs.
-- The **host gate** requires the exact existing photo-source set, known hotspot IDs, canonical plane slots,
-  valid references, and a final Zod-valid manifest. These are structural guarantees, not a semantic truth
-  verdict.
+- The **Codex SDK** receives a prose-free graph of opaque `hotspot-*` and `photo-*` tokens—never visitor text,
+  media, labels, claims, excerpts, asset paths, or original IDs. It runs read-only/no-network with an ephemeral
+  home and sanitized environment. A dynamic schema allows only the reviewed mechanic kind, exact token enums,
+  an allowlisted preset, and booleans; there is no free-text output field.
+- The **host gate** rejects mechanic changes, sequence reordering, and missing/extra/duplicate/unknown tokens;
+  requires the exact existing spatial photo set; rebinds original IDs; preserves reviewed interaction copy;
+  applies canonical plane slots; and requires a final Zod-valid manifest. These are structural guarantees, not
+  a semantic truth verdict.
 - A responsive **Next.js + React** runtime renders the validated package without evaluating arbitrary generated
   JavaScript, CSS, transforms, or shaders; the spatial presets are host-authored CSS.
 - Two credential-free exhibits use clearly labeled AI-generated fictional photos and synthetic narration to

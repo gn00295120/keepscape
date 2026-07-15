@@ -29,14 +29,14 @@ async function main() {
     agent.name.startsWith("Codex"),
   );
   const codexTests = result.manifest.buildEvidence.tests.filter((test) =>
-    ["Codex interaction compile", "Hotspot allowlist", "Spatial plan allowlist", "Post-build schema"].includes(test.name),
+    ["Opaque Codex boundary", "Codex interaction compile", "Hotspot allowlist", "Spatial plan allowlist", "Post-build schema"].includes(test.name),
   );
   if (!result.spatialPlan) throw new Error("Live Codex verification returned no spatial plan receipt.");
 
   console.log(
     JSON.stringify(
       {
-        receiptVersion: "1.1",
+        receiptVersion: "1.2",
         capturedAt: new Date().toISOString(),
         product: "Keepscape",
         codexSdkVersion: "0.144.4",
@@ -47,7 +47,7 @@ async function main() {
         spatialPlan: result.spatialPlan,
         codexAgents,
         codexTests,
-        note: "No family media, credentials, prompts from private users, or temporary workspace paths are retained.",
+        note: "Codex received only opaque enums/tokens and returned no prose. No family media, credentials, visitor prompts, original IDs, or temporary workspace paths are retained.",
       },
       null,
       2,

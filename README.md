@@ -5,8 +5,8 @@
 Keepscape turns three to five real photos and an original spoken memory into a source-grounded, walkable
 memory space. GPT-5.6 produces a strict source-linked story blueprint; the host compiles the supplied photos
 into a safe diorama; a person resolves uncertain claims and reviews the displayed generated story copy; Codex
-returns a typed interaction plus a bounded spatial plan that the host compiles and validates structurally; and
-the person approves Codex's final interaction-state wording before entry.
+compiles the reviewed mechanic from opaque tokens and returns a bounded spatial plan; the host rebinds and
+validates those structures; and the person approves the final interaction state before entry.
 
 This is not a slideshow, photogrammetry, NeRF, or an AI recreation of a person. The browser space is a generated
 spatial interpretation—not recovered geometry. Every factual detail resolves to an inspectable source or an
@@ -77,18 +77,23 @@ pnpm dev
 - `POST /api/blueprint` validates the request, then uses the OpenAI Responses API with GPT-5.6 structured
   output to produce claims, hotspots, narrative copy, and source links. GPT-5.6 does not emit spatial geometry
   or shared cross-photo anchors; the host compiles the three to five photo sources into a safe diorama.
-- `POST /api/build` invokes the Codex SDK only when `KEEPSCAPE_ENABLE_CODEX=1`. Codex works in an isolated,
-  no-network directory with an ephemeral `CODEX_HOME`, a minimal process environment, and no inherited shell
-  variables. It returns only a typed interaction plus a bounded plan containing a preset and an ordered list of
-  existing photo source IDs. The host applies canonical slots and rejects invalid references.
+- `POST /api/build` invokes the Codex SDK only when `KEEPSCAPE_ENABLE_CODEX=1`. The host replaces the reviewed
+  mechanic and photo IDs with opaque tokens, so no visitor prose, media, labels, original IDs, claims, or asset
+  paths enter the Codex turn. Codex runs read-only and without network access, with an ephemeral `CODEX_HOME`, a
+  minimal process environment, and no inherited shell variables. Its dynamic schema permits only the reviewed
+  mechanic kind, exact opaque token sets, an allowlisted preset, and booleans—no free-text output. The host
+  rebinds the tokens, preserves the reviewed interaction wording, applies canonical slots, and rejects invalid
+  references or sequence reordering.
 - `CODEX_MODEL` is optional. When omitted, the SDK uses the Codex model supported by the signed-in account;
   it is intentionally separate from `OPENAI_MODEL`, which selects GPT-5.6 for the Responses API.
 - If live credentials are absent, both routes return a labeled deterministic demonstration rather than
   pretending a model ran.
 
-Keep credentials server-side. Do not enable Codex generation on a shared host without an isolated workspace.
-The implementation deletes both the workspace and isolated Codex home after each run and never writes host
-artifacts back into the agent-writable directory after the turn.
+Keep credentials server-side. The Codex SDK sandbox is not a VM and does not promise host-read isolation; the
+security boundary is therefore prose-free opaque input, enum-only output, no network, read-only execution, and
+an opt-in server flag. Use a container or VM before expanding this boundary. The implementation deletes both
+the temporary workspace and isolated Codex home after each run and never writes product artifacts after the
+turn.
 
 ## How GPT-5.6 is used
 
@@ -105,8 +110,9 @@ them, and every downstream object retains its source references. Before build, t
 person to resolve every uncertain claim and explicitly review the displayed generated scene titles, narration,
 and all other GPT-authored exhibit, scene, hotspot, and interaction-draft copy shown at the source desk. A
 text-only story note is never presented as audio evidence; claims relying on it stay uncertain until the person
-confirms or preserves them. After Codex compiles the interaction, the final prompt and completion/retry wording
-remain visible for explicit human approval before entry.
+confirms or preserves them. Codex never receives or authors that wording. After it compiles the opaque mechanic
+and spatial plan, the preserved prompt and completion/retry wording remain visible for final human approval
+before entry.
 
 ## How Codex is used
 
@@ -118,9 +124,10 @@ Codex was the primary engineering collaborator throughout Build Week and is also
 - it helped implement the bounded photo-diorama presets and Evidence Lens without allowing arbitrary generated
   CSS or browser code;
 - it wrote unit, accessibility, and browser tests and repaired failures found during QA;
-- in live mode, it returns a strict build report with a typed interaction and the minimal spatial plan
-  `{ preset, orderedPhotoSourceIds }`; the host—not Codex—checks the exact source set, rebuilds canonical plane
-  slots, rebinds references, validates the final schema, and records the receipt.
+- in live mode, it receives a prose-free token graph and returns a strict enum-only build report containing the
+  reviewed interaction kind/tokens and a minimal spatial plan. The host—not Codex—maps tokens back to hotspot
+  and photo IDs, requires exact sets, preserves reviewed copy and sequence order, rebuilds canonical plane slots,
+  validates the final schema, and records the receipt.
 
 The human decisions are recorded in [`docs/DECISIONS.md`](docs/DECISIONS.md), including discarded directions
 and the point where evidence and safety constraints were chosen. This makes the collaboration inspectable
@@ -137,11 +144,12 @@ flowchart LR
   A[3–5 photos + transcript or story note] --> B[GPT-5.6 strict source-linked blueprint]
   B --> C[Host compiles safe photo diorama]
   C --> D[Human resolves uncertainty + reviews displayed story copy]
-  D --> E[Codex: typed interaction + preset + ordered photo IDs]
-  E --> F[Host allowlists IDs, applies canonical slots, validates references + schema]
-  F --> G[Human approves final interaction copy]
-  G --> H[Host CSS presets + typed runtime]
-  H --> I[Evidence Lens: cited view or reviewed region]
+  D --> E[Host converts approved structure to opaque tokens]
+  E --> F[Codex: enum-only mechanic tokens + spatial preset/order]
+  F --> G[Host rebinds IDs, preserves copy, validates references + schema]
+  G --> H[Human approves final interaction copy]
+  H --> I[Host CSS presets + typed runtime]
+  I --> J[Evidence Lens: cited view or reviewed region]
 ```
 
 The browser renders a small, typed interaction language with host-authored CSS presets instead of executing

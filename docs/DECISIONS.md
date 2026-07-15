@@ -82,8 +82,9 @@ Replay, Codex Sites, SkillForge, Replay.build, UiPath, Tango, and a March 2026 D
 
 Keepscape turns three to five photos and an original spoken story into a bespoke 2D/2.5D exhibit. GPT-5.6
 extracts a strict source-linked story blueprint; the host compiles the photo sources into a safe diorama; the
-human confirms or preserves uncertain facts and reviews generated wording; Codex returns a typed interaction
-and bounded photo-order plan; and the host validates allowlists, references, canonical slots, and schema. The
+human confirms or preserves uncertain facts and reviews generated wording; the host projects that reviewed
+structure to opaque tokens; Codex returns an enum-only mechanic/spatial plan without prose; and the host rebinds
+and validates exact sets, references, canonical slots, and schema. The
 product promise is not photo-to-3D and not an AI resurrection. Its differentiated unit is a playable true story
 where every factual detail can be traced to an inspectable source or a human confirmation; the manually
 calibrated judge fixtures additionally demonstrate reviewed photo regions and narration timecodes.
@@ -118,15 +119,17 @@ GPT-5.6 owns the strict source-linked blueprint: claims, hotspots, source refere
 not emit spatial geometry or shared cross-photo anchors. The host first compiles three to five photo source IDs
 into a safe diorama, then the human gate resolves all uncertainty and reviews the generated language.
 
-Live Codex owns two bounded choices after approval: a typed interaction over existing hotspot IDs and a spatial
-plan containing an allowlisted preset plus the existing photo source IDs in display order. The host requires the
-exact source set, recreates canonical slots, rebinds references, and validates the final schema. A post-Codex
-human gate shows the final mechanic, target set or required order, and all interaction-state wording before
-entry. Those checks prove structural integrity; only a person can decide whether generated wording and any
-sequence meaning are faithful to the memory. The public credential-free demo is a verified replay and must
-never be described as a live model run.
+After approval, the host projects only the reviewed mechanic into opaque hotspot tokens and the existing
+spatial planes into opaque photo tokens. Live Codex must return the same mechanic kind and exact token sets; it
+may arrange independent collect targets and choose an allowlisted spatial preset/photo order, but it cannot
+change a reviewed sequence or author interaction prose. The host keeps token maps in memory, rebinds the output,
+preserves reviewed copy, recreates canonical slots, and validates the final schema. A final-build human gate
+shows the final mechanic, target set or required order, and all interaction-state wording before entry. Those
+checks prove structural integrity; only a person can decide whether wording and sequence meaning are faithful.
+The public credential-free demo is a verified replay and must never be described as a live model run.
 
-Live Codex also receives an ephemeral home and a minimal environment with shell inheritance disabled. The host
-does not trust model-authored receipt prose, does not write post-turn files into the agent-writable workspace,
-and removes both temporary roots after the run. This keeps global Codex sessions, config, MCP servers, and
-unrelated host secrets outside the product boundary.
+Live Codex receives no visitor prose, media, labels, original IDs, claims, excerpts, or asset paths. Its dynamic
+output schema contains only finite enums and exact opaque token counts, with no free-text field. It also receives
+an ephemeral home, read-only/no-network execution, and a minimal environment with shell inheritance disabled;
+both temporary roots are removed after the run. The SDK sandbox is not a VM and is not claimed to prevent host
+reads, so a container or VM is required before expanding beyond this opaque, enum-only protocol.

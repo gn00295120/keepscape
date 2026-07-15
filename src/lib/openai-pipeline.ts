@@ -539,64 +539,186 @@ const codexBuildReportSchema = z
     interaction: z
       .object({
         kind: z.enum(["collect", "sequence"]),
-        prompt: z.string().min(1).max(220),
         hotspotIds: z.array(z.string().min(1).max(80)).min(3).max(6),
-        completionMessage: z.string().min(1).max(280),
-        retryMessage: z.string().min(1).max(280),
       })
       .strict(),
     spatialPlan: codexSpatialPlanSchema,
   })
   .strict();
 
-const CODEX_BUILD_REPORT_JSON_SCHEMA = {
-  type: "object",
-  properties: {
+const opaqueCodexBuildReportSchema = z
+  .object({
+    interaction: z
+      .object({
+        kind: z.enum(["collect", "sequence"]),
+        hotspotTokens: z.array(z.string().min(1).max(24)).min(3).max(6),
+      })
+      .strict(),
+    spatialPlan: z
+      .object({
+        enabled: z.boolean(),
+        preset: z.enum(["memory-corridor", "gallery-arc", "tabletop"]),
+        orderedPhotoTokens: z.array(z.string().min(1).max(24)).max(5),
+      })
+      .strict(),
+  })
+  .strict();
+
+type OpaqueCodexPacket = {
+  schemaVersion: "1";
+  interaction: {
+    allowedKind: "collect" | "sequence";
+    orderedHotspotTokens: string[];
+  };
+  spatialPlan: {
+    requiredEnabled: boolean;
+    suggestedPreset: "memory-corridor" | "gallery-arc" | "tabletop";
+    orderedPhotoTokens: string[];
+  };
+};
+
+/** Builds the only file the Codex turn may see. It deliberately contains no
+ * visitor prose, media, original IDs, source labels, claims, or asset paths. */
+export function createOpaqueCodexProjection(manifestInput: ExhibitManifest) {
+  const manifest = exhibitManifestSchema.parse(manifestInput);
+  const scene = manifest.scenes[0];
+  const interactionHotspotIds =
+    scene.interaction.kind === "collect"
+      ? scene.interaction.targetHotspotIds
+      : scene.interaction.stepHotspotIds;
+  const hotspotTokenToId = new Map<string, string>(
+    interactionHotspotIds.map((hotspotId, index) => [`hotspot-${index + 1}`, hotspotId] as const),
+  );
+
+  const photoTokenToId = new Map<string, string>(
+    (scene.spatial?.planes ?? []).map((plane, index) => [`photo-${index + 1}`, plane.sourceId] as const),
+  );
+  const packet: OpaqueCodexPacket = {
+    schemaVersion: "1",
     interaction: {
-      type: "object",
-      properties: {
-        kind: { type: "string", enum: ["collect", "sequence"] },
-        prompt: { type: "string" },
-        hotspotIds: {
-          type: "array",
-          minItems: 3,
-          maxItems: 6,
-          items: { type: "string" },
-        },
-        completionMessage: { type: "string" },
-        retryMessage: { type: "string" },
-      },
-      required: ["kind", "prompt", "hotspotIds", "completionMessage", "retryMessage"],
-      additionalProperties: false,
+      allowedKind: scene.interaction.kind,
+      orderedHotspotTokens: Array.from(hotspotTokenToId.keys()),
     },
     spatialPlan: {
-      type: "object",
-      properties: {
-        enabled: { type: "boolean" },
-        preset: { type: "string", enum: ["memory-corridor", "gallery-arc", "tabletop"] },
-        orderedPhotoSourceIds: {
-          type: "array",
-          maxItems: 5,
-          items: { type: "string" },
-        },
-      },
-      required: ["enabled", "preset", "orderedPhotoSourceIds"],
-      additionalProperties: false,
+      requiredEnabled: scene.spatial !== undefined,
+      suggestedPreset: scene.spatial?.preset ?? "tabletop",
+      orderedPhotoTokens: Array.from(photoTokenToId.keys()),
     },
-  },
-  required: ["interaction", "spatialPlan"],
-  additionalProperties: false,
-} as const;
+  };
 
-function redactInlineAssets(manifest: ExhibitManifest): string {
-  return JSON.stringify(
-    manifest,
-    (key, value: unknown) =>
-      key === "assetPath" && typeof value === "string" && value.startsWith("data:")
-        ? "[inline image retained by the typed runtime]"
-        : value,
-    2,
-  );
+  return { packet, hotspotTokenToId, photoTokenToId };
+}
+
+function createCodexBuildReportJsonSchema(
+  projection: ReturnType<typeof createOpaqueCodexProjection>,
+) {
+  const hotspotTokens = projection.packet.interaction.orderedHotspotTokens;
+  const photoTokens = projection.packet.spatialPlan.orderedPhotoTokens;
+  const spatialEnabled = projection.packet.spatialPlan.requiredEnabled;
+  return {
+    type: "object",
+    properties: {
+      interaction: {
+        type: "object",
+        properties: {
+          kind: { type: "string", enum: [projection.packet.interaction.allowedKind] },
+          hotspotTokens: {
+            type: "array",
+            minItems: hotspotTokens.length,
+            maxItems: hotspotTokens.length,
+            items: { type: "string", enum: hotspotTokens },
+          },
+        },
+        required: ["kind", "hotspotTokens"],
+        additionalProperties: false,
+      },
+      spatialPlan: {
+        type: "object",
+        properties: {
+          enabled: { type: "boolean", enum: [spatialEnabled] },
+          preset: {
+            type: "string",
+            enum: spatialEnabled
+              ? ["memory-corridor", "gallery-arc", "tabletop"]
+              : [projection.packet.spatialPlan.suggestedPreset],
+          },
+          orderedPhotoTokens: {
+            type: "array",
+            minItems: photoTokens.length,
+            maxItems: photoTokens.length,
+            items: {
+              type: "string",
+              enum: photoTokens.length > 0 ? photoTokens : ["no-photo-token"],
+            },
+          },
+        },
+        required: ["enabled", "preset", "orderedPhotoTokens"],
+        additionalProperties: false,
+      },
+    },
+    required: ["interaction", "spatialPlan"],
+    additionalProperties: false,
+  } as const;
+}
+
+export function rebindOpaqueCodexReport(
+  projection: ReturnType<typeof createOpaqueCodexProjection>,
+  reportInput: unknown,
+) {
+  const report = opaqueCodexBuildReportSchema.parse(reportInput);
+  const expectedHotspotTokens = projection.packet.interaction.orderedHotspotTokens;
+  const hotspotTokens = report.interaction.hotspotTokens;
+  if (report.interaction.kind !== projection.packet.interaction.allowedKind) {
+    throw new Error("Codex may not change the reviewed interaction kind.");
+  }
+  if (
+    hotspotTokens.length !== expectedHotspotTokens.length ||
+    new Set(hotspotTokens).size !== hotspotTokens.length ||
+    hotspotTokens.some((token) => !projection.hotspotTokenToId.has(token))
+  ) {
+    throw new Error("Codex must return every reviewed opaque hotspot token exactly once.");
+  }
+  if (
+    report.interaction.kind === "sequence" &&
+    hotspotTokens.some((token, index) => token !== expectedHotspotTokens[index])
+  ) {
+    throw new Error("Codex may not reorder a reviewed source-grounded sequence.");
+  }
+  const hotspotIds = hotspotTokens.map((token) => {
+    const hotspotId = projection.hotspotTokenToId.get(token);
+    if (!hotspotId) throw new Error("Codex returned an unavailable opaque hotspot token.");
+    return hotspotId;
+  });
+
+  const expectedPhotoTokens = projection.packet.spatialPlan.orderedPhotoTokens;
+  const photoTokens = report.spatialPlan.orderedPhotoTokens;
+  if (report.spatialPlan.enabled !== projection.packet.spatialPlan.requiredEnabled) {
+    throw new Error("Codex may not change whether the reviewed scene is spatial.");
+  }
+  if (
+    photoTokens.length !== expectedPhotoTokens.length ||
+    new Set(photoTokens).size !== photoTokens.length ||
+    photoTokens.some((token) => !projection.photoTokenToId.has(token))
+  ) {
+    throw new Error("Codex must return every opaque photo token exactly once.");
+  }
+  const orderedPhotoSourceIds = photoTokens.map((token) => {
+    const sourceId = projection.photoTokenToId.get(token);
+    if (!sourceId) throw new Error("Codex returned an unavailable opaque photo token.");
+    return sourceId;
+  });
+
+  return {
+    interaction: {
+      kind: report.interaction.kind,
+      hotspotIds,
+    },
+    spatialPlan: {
+      enabled: report.spatialPlan.enabled,
+      preset: report.spatialPlan.preset,
+      orderedPhotoSourceIds,
+    },
+  };
 }
 
 export function compileCodexBuildReport(
@@ -609,28 +731,32 @@ export function compileCodexBuildReport(
   const scene = manifest.scenes[0];
   const availableHotspotIds = new Set(scene.hotspots.map((hotspot) => hotspot.id));
   const selectedHotspotIds = report.interaction.hotspotIds;
+  const reviewedHotspotIds =
+    scene.interaction.kind === "collect"
+      ? scene.interaction.targetHotspotIds
+      : scene.interaction.stepHotspotIds;
   if (
     new Set(selectedHotspotIds).size !== selectedHotspotIds.length ||
-    selectedHotspotIds.some((hotspotId) => !availableHotspotIds.has(hotspotId))
+    selectedHotspotIds.some((hotspotId) => !availableHotspotIds.has(hotspotId)) ||
+    selectedHotspotIds.length !== reviewedHotspotIds.length ||
+    selectedHotspotIds.some((hotspotId) => !reviewedHotspotIds.includes(hotspotId))
   ) {
-    throw new Error("Codex interaction referenced unavailable or duplicate hotspots.");
+    throw new Error("Codex interaction must contain every reviewed hotspot exactly once.");
+  }
+  if (report.interaction.kind !== scene.interaction.kind) {
+    throw new Error("Codex may not change the reviewed interaction kind.");
+  }
+  if (
+    report.interaction.kind === "sequence" &&
+    selectedHotspotIds.some((hotspotId, index) => hotspotId !== reviewedHotspotIds[index])
+  ) {
+    throw new Error("Codex may not reorder a reviewed source-grounded sequence.");
   }
 
   const compiledInteraction =
-    report.interaction.kind === "collect"
-      ? {
-          kind: "collect" as const,
-          prompt: report.interaction.prompt,
-          targetHotspotIds: selectedHotspotIds,
-          completionMessage: report.interaction.completionMessage,
-        }
-      : {
-          kind: "sequence" as const,
-          prompt: report.interaction.prompt,
-          stepHotspotIds: selectedHotspotIds,
-          successMessage: report.interaction.completionMessage,
-          retryMessage: report.interaction.retryMessage,
-        };
+    scene.interaction.kind === "collect"
+      ? { ...scene.interaction, targetHotspotIds: selectedHotspotIds }
+      : { ...scene.interaction, stepHotspotIds: selectedHotspotIds };
 
   const orderedPhotoSourceIds = report.spatialPlan.orderedPhotoSourceIds;
   let compiledSpatial = scene.spatial;
@@ -716,8 +842,8 @@ export function compileCodexBuildReport(
         {
           name: "Codex interaction and spatial builder",
           role: report.spatialPlan.enabled
-            ? "Created the story-specific typed mechanic and a bounded spatial plan in an isolated, no-network workspace."
-            : "Created the story-specific typed mechanic and explicitly disabled spatial planning for the non-spatial scene.",
+            ? "Planned a typed mechanic and bounded spatial layout from opaque host tokens in a no-network workspace."
+            : "Planned a typed mechanic from opaque host tokens and explicitly disabled spatial planning for the non-spatial scene.",
           result: report.spatialPlan.enabled
             ? `The host compiled a ${report.interaction.kind} interaction over ${selectedHotspotIds.length} existing hotspots and applied the allowlisted ${report.spatialPlan.preset} preset.`
             : `The host compiled a ${report.interaction.kind} interaction over ${selectedHotspotIds.length} existing hotspots with spatial planning disabled.`,
@@ -725,13 +851,18 @@ export function compileCodexBuildReport(
         },
         {
           name: "Codex output allowlist",
-          role: "Host-validated the bounded Codex output without trusting model-authored receipt prose.",
+          role: "Host rebound opaque tokens and validated the bounded Codex output; the agent returned no prose.",
           result: `All ${selectedHotspotIds.length} interaction IDs and ${orderedPhotoSourceIds.length} spatial photo IDs resolved uniquely against the input manifest.`,
           status: "passed" as const,
         },
       ],
       tests: [
         ...manifest.buildEvidence.tests,
+        {
+          name: "Opaque Codex boundary",
+          detail: "The agent received only finite opaque tokens/enums and returned no prose or original IDs.",
+          status: "passed" as const,
+        },
         {
           name: "Codex interaction compile",
           detail: `The host compiled one ${report.interaction.kind} mechanic from ${selectedHotspotIds.length} distinct allowlisted hotspot IDs.`,
@@ -804,7 +935,11 @@ export async function buildExhibit(
       await chmod(join(isolatedCodexHome, "auth.json"), 0o600);
     }
 
-    await writeFile(join(workspace, "manifest.json"), redactInlineAssets(manifest), { encoding: "utf8", mode: 0o600 });
+    const opaqueProjection = createOpaqueCodexProjection(manifest);
+    await writeFile(join(workspace, "codex-input.json"), JSON.stringify(opaqueProjection.packet, null, 2), {
+      encoding: "utf8",
+      mode: 0o600,
+    });
     const codex = new Codex({
       ...(environment.OPENAI_API_KEY ? { apiKey: environment.OPENAI_API_KEY } : {}),
       env: {
@@ -824,18 +959,22 @@ export async function buildExhibit(
       skipGitRepoCheck: true,
       ...(environment.CODEX_MODEL ? { model: environment.CODEX_MODEL } : {}),
       modelReasoningEffort: "high",
-      sandboxMode: "workspace-write",
+      sandboxMode: "read-only",
       approvalPolicy: "never",
       networkAccessEnabled: false,
       webSearchMode: "disabled",
     });
     const turn = await thread.run(
-      `Act as Keepscape's isolated interaction and spatial-plan builder. Read manifest.json and CREATE or refine its first scene's typed interaction using only existing hotspot IDs. Choose collect for independent evidence and sequence only when source material establishes order. If the first scene already has a spatial plan, return spatialPlan.enabled=true, select one allowlisted preset, and list every existing spatial plane photo source ID exactly once in the intended display order. If it has no spatial plan, return enabled=false and an empty orderedPhotoSourceIds array. Never invent, omit, or duplicate source IDs. Do not change claims, add factual story content, execute visitor code, or access the network. Prompt and completion copy must describe interaction state without asserting new story facts. Return only the complete typed interaction and required spatial plan.`,
-      { outputSchema: CODEX_BUILD_REPORT_JSON_SCHEMA },
+      `Act as Keepscape's bounded interaction and spatial-plan builder. Read only codex-input.json, which contains opaque host tokens and enums. Return exactly the allowed interaction kind and every supplied hotspot token once. Preserve sequence token order exactly; collect token order may vary. Return the required spatial enabled state, one permitted preset, and every supplied photo token exactly once in intended display order. Never read any other path, execute code, access the network, or return prose.`,
+      { outputSchema: createCodexBuildReportJsonSchema(opaqueProjection) },
+    );
+    const reboundReport = rebindOpaqueCodexReport(
+      opaqueProjection,
+      JSON.parse(turn.finalResponse),
     );
     const { manifest: builtManifest, report } = compileCodexBuildReport(
       manifest,
-      JSON.parse(turn.finalResponse),
+      reboundReport,
       `${environment.CODEX_MODEL ?? "Codex account default"} via Codex SDK`,
     );
 
@@ -847,8 +986,8 @@ export async function buildExhibit(
         {
           agent: "Codex",
           action: report.spatialPlan.enabled
-            ? "Created a typed interaction and bounded spatial plan in an isolated no-network workspace."
-            : "Created a typed interaction and explicitly returned an empty spatial plan for the non-spatial scene.",
+            ? "Planned a typed interaction and bounded spatial layout from an opaque, prose-free token graph."
+            : "Planned a typed interaction from opaque tokens and returned an empty spatial plan for the non-spatial scene.",
           status: "passed",
         },
         {
@@ -870,7 +1009,7 @@ export async function buildExhibit(
   } catch {
     return demoBuildResult(
       manifest,
-      "The isolated Codex build was unavailable; Keepscape recovered with the validated typed runtime.",
+      "The opaque-token Codex build was unavailable; Keepscape recovered with the validated typed runtime.",
     );
   } finally {
     const { rm } = await import("node:fs/promises");

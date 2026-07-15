@@ -81,8 +81,8 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
       name: "Codex",
       role: "Exhibit workshop",
       detail: manifest.scenes.some((scene) => scene.spatial)
-        ? "Compiles the story into a typed interaction and bounded spatial preset; the host validates every source, plane, anchor, and interaction reference."
-        : "Creates the story-specific typed interaction; the host then validates every allowed reference.",
+        ? "Compiles the reviewed mechanic from opaque tokens and chooses a bounded spatial preset/order; the host rebinds and validates every reference."
+        : "Compiles the reviewed mechanic through a prose-free token contract; the host rebinds and validates every reference.",
       Icon: Code2,
     },
   ];
@@ -104,6 +104,7 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
         {pipelineSteps.map(({ name, role, detail, Icon }, index) => {
           const isActive = runState === "running" && activeStep === index;
           const isDone = runState === "complete" || activeStep > index;
+          const isBundledReplay = runState === "complete" && mode === "demo" && index !== 1;
           return (
             <article className={`pipeline-card${isActive ? " is-active" : ""}${isDone ? " is-done" : ""}`} key={name}>
               <div className="pipeline-card__top">
@@ -111,7 +112,15 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
                   {isDone ? <Check size={18} strokeWidth={2.8} aria-hidden="true" /> : <Icon size={20} aria-hidden="true" />}
                 </span>
                 <span className="pipeline-card__status">
-                  {isActive ? "working" : isDone ? "complete" : index === 1 ? "approved" : "waiting"}
+                  {isActive
+                    ? "working"
+                    : isBundledReplay
+                      ? "bundled"
+                      : isDone
+                        ? "complete"
+                        : index === 1
+                          ? "approved"
+                          : "waiting"}
                 </span>
               </div>
               <span className="pipeline-card__index">0{index + 1}</span>
@@ -197,11 +206,11 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
       {runState === "complete" && finalInteraction ? (
         <section className="final-copy-review" aria-labelledby="final-copy-review-title">
           <div>
-            <span className="ticket-number">Post-Codex human gate</span>
+            <span className="ticket-number">Final build human gate</span>
             <h2 id="final-copy-review-title">Approve the final interaction language.</h2>
             <p>
-              Codex may shape state copy, but it is instructed not to add story facts. The final semantic decision
-              remains yours; entering records this visible read-through as provenance.
+              When Codex runs it sees only opaque tokens and cannot author this copy. In every mode, the host
+              preserves the source-desk language; this gate confirms the final mechanic, order, and wording.
             </p>
           </div>
           <dl>

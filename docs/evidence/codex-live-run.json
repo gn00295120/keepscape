@@ -1,6 +1,6 @@
 {
-  "receiptVersion": "1.1",
-  "capturedAt": "2026-07-15T04:28:58.429Z",
+  "receiptVersion": "1.2",
+  "capturedAt": "2026-07-15T05:07:30.140Z",
   "product": "Keepscape",
   "codexSdkVersion": "0.144.4",
   "mode": "live",
@@ -8,7 +8,7 @@
   "trace": [
     {
       "agent": "Codex",
-      "action": "Created a typed interaction and bounded spatial plan in an isolated no-network workspace.",
+      "action": "Planned a typed interaction and bounded spatial layout from an opaque, prose-free token graph.",
       "status": "passed"
     },
     {
@@ -24,13 +24,13 @@
   ],
   "interaction": {
     "kind": "collect",
-    "prompt": "Collect all three lantern hotspots to complete the interaction.",
+    "prompt": "Collect the three lanterns preserved across the source photographs.",
     "targetHotspotIds": [
       "hotspot-painted-lantern",
       "hotspot-tasseled-lantern",
       "hotspot-pale-lantern"
     ],
-    "completionMessage": "All three lantern hotspots collected."
+    "completionMessage": "Three lights, three citations. The lane is complete without adding a new fact."
   },
   "spatialPlan": {
     "enabled": true,
@@ -44,18 +44,23 @@
   "codexAgents": [
     {
       "name": "Codex interaction and spatial builder",
-      "role": "Created the story-specific typed mechanic and a bounded spatial plan in an isolated, no-network workspace.",
+      "role": "Planned a typed mechanic and bounded spatial layout from opaque host tokens in a no-network workspace.",
       "result": "The host compiled a collect interaction over 3 existing hotspots and applied the allowlisted memory-corridor preset.",
       "status": "passed"
     },
     {
       "name": "Codex output allowlist",
-      "role": "Host-validated the bounded Codex output without trusting model-authored receipt prose.",
+      "role": "Host rebound opaque tokens and validated the bounded Codex output; the agent returned no prose.",
       "result": "All 3 interaction IDs and 3 spatial photo IDs resolved uniquely against the input manifest.",
       "status": "passed"
     }
   ],
   "codexTests": [
+    {
+      "name": "Opaque Codex boundary",
+      "detail": "The agent received only finite opaque tokens/enums and returned no prose or original IDs.",
+      "status": "passed"
+    },
     {
       "name": "Codex interaction compile",
       "detail": "The host compiled one collect mechanic from 3 distinct allowlisted hotspot IDs.",
@@ -77,5 +82,5 @@
       "status": "passed"
     }
   ],
-  "note": "No family media, credentials, prompts from private users, or temporary workspace paths are retained."
+  "note": "Codex received only opaque enums/tokens and returned no prose. No family media, credentials, visitor prompts, original IDs, or temporary workspace paths are retained."
 }
