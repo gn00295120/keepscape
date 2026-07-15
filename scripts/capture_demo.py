@@ -423,7 +423,10 @@ def capture(browser: Browser) -> None:
             raise RuntimeError(f"Pinned GitHub receipt did not load: HTTP {status}")
         receipt_marker = page.get_by_text("codexSdkVersion", exact=False).first
         receipt_marker.wait_for(timeout=60_000)
-        receipt_marker.scroll_into_view_if_needed()
+        # GitHub replaces code-line nodes while hydrating. Scroll the page,
+        # not a locator handle that can detach between wait and action.
+        pause(page, 2)
+        page.mouse.wheel(0, 320)
         pause(page, 8)
         save_clip(context, page, "07-engineering", shot_started)
 

@@ -29,8 +29,8 @@ CONCAT_FILE = WORK / "segments.ffconcat"
 
 SEGMENT_NUMBERS = tuple(range(1, 9))
 SAY_VOICE = "Samantha"
-SAY_RATE = 150
-TAIL_PAUSE_SECONDS = 0.7
+SAY_RATE = 152
+TAIL_PAUSE_SECONDS = 0.6
 MAX_FINAL_DURATION_SECONDS = 179.0
 # Leave room for frame and AAC timestamp rounding while preserving the hard 179s gate.
 ENCODE_SAFETY_MARGIN_SECONDS = 0.75
