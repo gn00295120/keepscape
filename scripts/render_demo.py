@@ -29,15 +29,16 @@ CONCAT_FILE = WORK / "segments.ffconcat"
 
 SEGMENT_NUMBERS = tuple(range(1, 9))
 SAY_VOICE = "Samantha"
-SAY_RATE = 152
-TAIL_PAUSE_SECONDS = 0.6
+SAY_RATE = 140
+TAIL_PAUSE_SECONDS = 0.9
+MAX_CLONED_FRAME_SECONDS = 0.35
 MAX_FINAL_DURATION_SECONDS = 179.0
 # Leave room for frame and AAC timestamp rounding while preserving the hard 179s gate.
 ENCODE_SAFETY_MARGIN_SECONDS = 0.75
 MAX_PLANNED_DURATION_SECONDS = MAX_FINAL_DURATION_SECONDS - ENCODE_SAFETY_MARGIN_SECONDS
 VIDEO_WIDTH = 1920
 VIDEO_HEIGHT = 1080
-VIDEO_FPS = 30
+VIDEO_FPS = 25
 SUBTITLE_WRAP_WIDTH = 76
 SUBTITLE_LINE_WIDTH = 42
 MAX_SUBTITLE_LINES = 2
@@ -256,7 +257,13 @@ def render_segment(segment: DemoSegment) -> None:
         f"fps={VIDEO_FPS}",
     ]
     if segment.raw_duration < target:
-        freeze_duration = target - segment.raw_duration + (1.0 / VIDEO_FPS)
+        shortfall = target - segment.raw_duration
+        if shortfall > MAX_CLONED_FRAME_SECONDS:
+            raise RuntimeError(
+                f"Raw clip {segment.number:02d} is {shortfall:.3f}s shorter than its narration window; "
+                f"re-record the shot instead of freezing its final frame",
+            )
+        freeze_duration = shortfall + (1.0 / VIDEO_FPS)
         video_filters.append(f"tpad=stop_mode=clone:stop_duration={freeze_duration:.6f}")
     video_filters.extend([f"trim=duration={target:.6f}", "setpts=PTS-STARTPTS"])
 
@@ -295,7 +302,7 @@ def render_segment(segment: DemoSegment) -> None:
             "-preset",
             "medium",
             "-crf",
-            "18",
+            "16",
             "-pix_fmt",
             "yuv420p",
             "-profile:v",

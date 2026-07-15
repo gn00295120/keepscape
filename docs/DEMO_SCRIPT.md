@@ -1,86 +1,69 @@
-# Sub-three-minute demo script
+# Final sub-three-minute demo script
 
-Target runtime: **2:20–2:50**. Never exceed 2:59.
+Actual runtime: **2:15.663**. The spoken copy is canonical in
+[`DEMO_NARRATION.md`](./DEMO_NARRATION.md).
 
-## 0:00–0:13 — The transformation
+## 0:00–0:15 — The transformation
 
-**Visual:** Begin inside the three-photo night-market corridor; move forward and look across the source planes.
+**Visual:** Open on three labeled source photos and the line “Three photos. One voice.” Dissolve into the
+walkable night-market diorama, then drag, move deeper, and look left so the spatial motion is unmistakable.
 
-**Narration:** “Three photographs and one voice used to end in a folder. Keepscape turns them into a place you
-can move through—where every factual detail still knows the way back to its source.”
+**Purpose:** Show the product magic before explaining the architecture.
 
-## 0:13–0:28 — The promise
+## 0:15–0:34 — Evidence Lens
 
-**Visual:** Hero and the two sample archives.
+**Visual:** Move deeper, select Painted, turn on Evidence Lens, and hold on the isolated cited photo region. Open
+the source archive and show the fictional source photo, the 0–5 second narration range, and the storyteller
+confirmation.
 
-**Narration:** “The space is a generated spatial interpretation, never a scan or reconstruction. GPT-5.6 maps
-claims, hotspots, and narrative copy to the supplied photos and transcript. It does not reconstruct geometry;
-the host compiles the photo sources into an allowlisted diorama.”
+**Purpose:** Establish the differentiator: the generated world can always lead back to evidence.
 
-## 0:28–0:52 — GPT-5.6 understands the archive
+## 0:34–0:54 — Human truth control
 
-**Visual:** Open the night-market archive. Move through sources, transcript timecodes, extracted claims, and
-uncertainty states.
+**Visual:** In the enlarged Source Desk, move from supported claims to the unsupported bicycle-ownership claim.
+Choose **Preserve uncertainty**, show **Kept uncertain**, then reveal and check the generated-language review gate.
 
-**Narration:** “These are clearly labeled AI-generated fictional demo photos and synthetic narration—not family
-scans or a reconstructed place. GPT-5.6 separates supported details from the gaps only a human can resolve.”
+**Purpose:** Make clear that GPT-5.6 maps evidence, while a person controls truth and language.
 
-## 0:52–1:09 — Human agency
+## 0:54–1:17 — GPT-5.6, human, Codex
 
-**Visual:** Show the family-confirmed date beside a source-backed detail. On the separate uncertain ownership
-claim, choose **Confirm as remembered**, inspect the generated-language review, check its approval, and show that
-the build receipt gains a human confirmation source.
+**Visual:** Hold on the three large GPT-5.6 / You / Codex cards. Build the story, show **PUBLIC REPLAY**, the
+prominent **VERIFIED LIVE CODEX SDK RUN** receipt link, the validated trace, and the final human interaction gate.
 
-**Narration:** “Before build, the storyteller must confirm or preserve every uncertainty and review every displayed
-claim and story field against the sources. Confirmation becomes provenance; model confidence never does. The
-final built mechanic, targets or order, and interaction wording are also shown for approval before entry.”
+**Purpose:** Explain the opaque-token Codex boundary without making the public judge flow look like a failed live
+run.
 
-## 1:09–1:30 — Codex builds and verifies
+## 1:17–1:32 — Lantern Lane payoff
 
-**Visual:** Build pipeline animates through interaction design and the visible replay trace; hold on Build
-evidence, then cut briefly to the spatial-plan validator and its tests in the repository.
+**Visual:** Select Painted, Tasseled, and Pale in quick succession. End on three completed markers, **3/3**, the
+completion copy “Three lights, three citations,” and **Archive trail complete**.
 
-**Narration:** “Live Codex sees no story prose or media—only opaque tokens—and can return no free text. It
-confirms the approved mechanic and chooses an allowlisted spatial preset and photo-token order. The host requires
-exact sets, preserves copy and sequence order, rebinds IDs, rebuilds canonical slots, and validates the final
-schema. This public demo is a verified replay, not a disguised live run.”
+**Purpose:** Show a complete, playful interaction—not just a technical proof.
 
-## 1:30–2:07 — Emotional reveal
+## 1:32–1:52 — A second mechanic
 
-**Visual:** Move deeper into Lantern Lane, select Painted, turn on Evidence Lens, show the manually calibrated
-cited region and audio timecode, then complete the trail.
+**Visual:** In Repair Bench, ring too early and show the reset. Then perform Turn → Loosen → Chain → Ring. End on
+four completed markers, **4/4**, the restored-ritual feedback, and **Archive trail complete**.
 
-**Narration:** “Evidence Lens makes the truth boundary visible: generated space recedes, the sourced view stays
-legible, and this reviewed fixture region is outlined. Open its receipt for the labeled fictional image,
-narration timecode, and human confirmation. Without reviewed region metadata, Keepscape claims only the cited
-source view.”
+**Purpose:** Prove the runtime produces evidence-shaped mechanics rather than reskinned slideshows.
 
-## 2:07–2:31 — Prove it is not a template
+## 1:52–2:10 — Engineering evidence
 
-**Visual:** Switch to Four Moves at the Repair Bench. Perform the repair steps out of order once, then complete them.
+**Visual:** Show a readable proof card for 62 unit tests, four browser flows, a live Codex SDK receipt, and zero
+judge credentials. Then show the pinned public receipt at enlarged browser zoom.
 
-**Narration:** “A second archive produces a different mechanic: a repair ritual where sequence carries the
-story. It is the same safe runtime, but a different typed interaction shaped by the evidence.”
+**Purpose:** Give judges verifiable implementation evidence without turning the demo into a repository tour.
 
-## 2:31–2:49 — Codex development evidence
+## 2:10–2:16 — Close
 
-**Visual:** Fast montage of decision log, parallel Codex threads, tests, responsive view, and repository.
+**Visual:** Clean title card: “Keepscape — Walk into a true story,” followed by the hosted app and repository URLs.
 
-**Narration:** “GPT-5.6 powers the strict source-linked blueprint. Codex compiles its reviewed mechanic through a
-prose-free token boundary, supplies the bounded spatial plan, and was also the engineering partner that
-implemented, tested, and visually refined Keepscape during Build Week.”
+## Capture and upload checklist
 
-## 2:49–2:55 — Close
-
-**Visual:** Completed exhibit, title card.
-
-**Narration:** “Keepscape. Your memories deserve more than a camera roll. Walk into a true story.”
-
-## Capture checklist
-
-- Record at 1920×1080 with browser zoom fixed at 100%.
-- Show a real cursor and no jump that hides a failed state.
-- Keep the OpenAI model name and Codex build receipt legible.
-- Include spoken narration; captions are supplementary.
-- An AI-assisted voiceover is explicitly allowed by the July 13 host announcement.
-- Upload publicly to YouTube and verify playback while logged out.
+- Capture every browser segment natively at 1920×1080 and 25 fps.
+- Never freeze a short clip to fit narration by more than 0.35 seconds; re-record it instead.
+- Use an ordinary arrow cursor with eased movement; hide it on opening and closing cards.
+- Keep GPT-5.6, PUBLIC REPLAY, the live Codex receipt, and both completion states legible.
+- Include spoken narration. Upload the supplied 30-cue SRT as YouTube captions.
+- The AI-assisted voiceover is permitted by the July 13 host announcement.
+- Upload publicly to YouTube and verify video, audio, and captions while logged out.

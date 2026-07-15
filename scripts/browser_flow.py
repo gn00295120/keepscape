@@ -42,7 +42,9 @@ def enter_exhibit(page: Page, sample_index: int, title: str, capture_review: boo
     page.get_by_role("button", name="Build this true story").click()
     launch = page.get_by_role("button", name=f"Approve final interaction & enter {title}")
     launch.wait_for(timeout=15_000)
-    assert "Runtime fallback" in page.locator("body").inner_text()
+    build_text = page.locator("body").inner_text()
+    assert "PUBLIC REPLAY" in build_text, build_text
+    assert "VERIFIED LIVE CODEX SDK RUN" in build_text, build_text
     if capture_review:
         page.get_by_role("heading", name="Approve the final interaction language.").scroll_into_view_if_needed()
         page.screenshot(path="/tmp/keepscape-qa/post-codex-language-gate.png", full_page=False)

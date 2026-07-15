@@ -5,49 +5,44 @@ Each numbered paragraph maps to the identically numbered browser clip produced b
 
 ## 01 — The transformation
 
-Three photographs and one voice used to end in a folder. Keepscape turns them into a place you can move
-through—where every factual detail still knows the way back to its source.
+Three photos and one voice used to end in a folder. Keepscape turns them into a place you can move through. The
+photos remain sources; the space around them is labeled interpretation. This demo uses fictional generated
+media.
 
 ## 02 — The promise
 
-Never a scan or reconstruction, this generated spatial interpretation starts at a source desk. GPT-5.6 links
-claims, hotspots, and copy to supplied photos and transcript; it does not make geometry. The host compiles those
-sources into an allowlisted diorama.
+Select the painted lantern and switch on Evidence Lens. The generated space recedes while the cited photograph
+stays clear, including this reviewed region. Open the receipt to see the fictional source photo, the
+zero-to-five-second narration, and the human confirmation behind the detail.
 
 ## 03 — The source desk
 
-This judge archive uses AI-generated fictional photos and synthetic narration—not family scans or a reconstructed
-place. Sources support three lanterns, not bicycle ownership. A person must preserve or confirm that uncertainty
-and review every displayed claim and story field. Confirmation becomes provenance; model confidence never does.
-The final built mechanic, targets or order, and interaction wording are also shown for approval before entry.
+GPT-5.6 can map what the archive supports, but it cannot decide a family's truth. These sources show three
+lanterns; they do not prove who owned the bicycle. The storyteller preserves that uncertainty, then reviews every
+displayed claim and generated story field before anything can be built.
 
 ## 04 — Codex and the host gate
 
-In a live build, Codex sees no story prose or media—only opaque tokens and enums—and can return no free text. It
-confirms the approved mechanic and chooses an allowlisted spatial preset and photo-token order. The host requires
-exact sets, preserves copy and sequence order, rebinds IDs, applies canonical slots, and validates the schema.
-These are structural checks; a human gate reviews faithfulness. This judge path shows a verified replay, its
-actual fallback trace, and a redacted live Codex SDK receipt.
+GPT-5.6 turns sources into a linked blueprint. A person controls truth and language. Codex sees only opaque
+tokens, then chooses a bounded interaction and spatial preset—never prose. This public experience is a verified
+replay; the linked receipt proves a separate live SDK run. A final human gate approves the result.
 
 ## 05 — Lantern Lane
 
-Move deeper and select the painted lantern. Evidence Lens shows the truth boundary: generated space recedes while
-the cited view stays legible. This manually calibrated fixture outlines its reviewed photo region; without that
-metadata, Keepscape claims only a cited view, never an exact crop. Its receipt shows the fictional photo, synthetic
-narration, zero-to-five-second timecode, and human confirmation. Three lights finish with three citations—and no
-new family fact.
+Back in Lantern Lane, each source-backed object advances the trail. Painted, tasseled, pale: three lights, three
+citations. The space can feel magical without adding a new family fact.
 
 ## 06 — Repair Bench
 
-A second archive produces a different mechanic. Ringing the bell too soon fails because the spoken source
-established an order. Turn the bicycle, loosen the wheel, seat the chain, then ring. The same safe runtime becomes
-a repair ritual—not a reskinned slideshow, but an interaction shaped by the evidence.
+A second archive becomes a different mechanic. Ring too soon and the ritual resets, because the storyteller's
+voice established an order. Turn the bicycle, loosen the wheel, seat the chain, then ring. The same safe runtime
+becomes an interaction shaped by the evidence, not a reskinned slideshow.
 
 ## 07 — Engineering evidence
 
-Codex also built Keepscape with us. The public repository records discarded ideas, human decisions, the source
-contract, sixty-two unit tests, four browser-test executions, desktop and mobile visual QA, and a
-redacted live Codex receipt. The hosted judge path is credential-free.
+Codex also helped build Keepscape. The public repository records our decisions, sixty-two unit tests, four
+browser flows, mobile visual review, and a redacted live SDK receipt. Judges can run the complete experience
+without credentials.
 
 ## 08 — Close
 
