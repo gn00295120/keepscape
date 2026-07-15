@@ -209,27 +209,29 @@ def pause(page: Page, seconds: float) -> None:
     page.wait_for_timeout(int(seconds * 1000))
 
 
-def ease_in_out(progress: float) -> float:
-    return progress * progress * (3 - 2 * progress)
-
-
 def move_mouse(page: Page, x: float, y: float, duration: float = 0.55) -> None:
-    start_x, start_y = page.evaluate(
-        """() => {
+    page.evaluate(
+        """({ x, y, duration }) => new Promise(resolve => {
           const cursor = document.getElementById('keepscape-demo-cursor');
-          return cursor
-            ? [Number.parseFloat(cursor.style.left) || 60, Number.parseFloat(cursor.style.top) || 60]
-            : [60, 60];
-        }"""
+          if (!cursor) { resolve(); return; }
+          const startX = Number.parseFloat(cursor.style.left) || 60;
+          const startY = Number.parseFloat(cursor.style.top) || 60;
+          const startedAt = performance.now();
+          const frame = now => {
+            const raw = Math.min(1, (now - startedAt) / Math.max(1, duration * 1000));
+            const eased = raw * raw * (3 - 2 * raw);
+            cursor.style.left = `${startX + (x - startX) * eased}px`;
+            cursor.style.top = `${startY + (y - startY) * eased}px`;
+            cursor.style.opacity = '1';
+            if (raw < 1) requestAnimationFrame(frame);
+            else resolve();
+          };
+          requestAnimationFrame(frame);
+        })""",
+        {"x": x, "y": y, "duration": duration},
     )
-    steps = max(2, round(duration / 0.016))
-    for step in range(1, steps + 1):
-        progress = ease_in_out(step / steps)
-        page.mouse.move(
-            start_x + (x - start_x) * progress,
-            start_y + (y - start_y) * progress,
-        )
-        pause(page, duration / steps)
+    # Keep Playwright's real hit target aligned with the cinematic cursor.
+    page.mouse.move(x, y)
 
 
 def smooth_reveal(page: Page, locator: Locator, block: str = "center", duration: float = 0.8) -> None:
@@ -243,14 +245,23 @@ def smooth_reveal(page: Page, locator: Locator, block: str = "center", duration:
         }""",
         block,
     )
-    start_y = page.evaluate("window.scrollY")
     max_y = page.evaluate("Math.max(0, document.documentElement.scrollHeight - window.innerHeight)")
     destination = max(0, min(float(target_y), float(max_y)))
-    steps = max(2, round(duration / 0.016))
-    for step in range(1, steps + 1):
-        progress = ease_in_out(step / steps)
-        page.evaluate("y => window.scrollTo(0, y)", start_y + (destination - start_y) * progress)
-        pause(page, duration / steps)
+    page.evaluate(
+        """({ destination, duration }) => new Promise(resolve => {
+          const startY = window.scrollY;
+          const startedAt = performance.now();
+          const frame = now => {
+            const raw = Math.min(1, (now - startedAt) / Math.max(1, duration * 1000));
+            const eased = raw * raw * (3 - 2 * raw);
+            window.scrollTo(0, startY + (destination - startY) * eased);
+            if (raw < 1) requestAnimationFrame(frame);
+            else resolve();
+          };
+          requestAnimationFrame(frame);
+        })""",
+        {"destination": destination, "duration": duration},
+    )
 
 
 def set_page_zoom(page: Page, zoom: float) -> None:
@@ -294,11 +305,8 @@ def glide_drag(page: Page, locator: Locator, delta_x: float, delta_y: float, dur
     start_y = box["y"] + box["height"] * 0.52
     move_mouse(page, start_x, start_y, 0.5)
     page.mouse.down()
-    steps = max(2, round(duration / 0.016))
-    for step in range(1, steps + 1):
-        progress = ease_in_out(step / steps)
-        page.mouse.move(start_x + delta_x * progress, start_y + delta_y * progress)
-        pause(page, duration / steps)
+    page.mouse.move(start_x + delta_x, start_y + delta_y, steps=max(8, round(duration * 14)))
+    pause(page, duration)
     page.mouse.up()
 
 
@@ -605,7 +613,7 @@ def capture(browser: Browser) -> None:
             "Every detail has a way home.",
             duration=1.8,
         )
-        pause(page, 4.8)
+        pause(page, 3.0)
         open_archive = truth_thread.get_by_role("button", name="Open full source archive")
         open_archive.scroll_into_view_if_needed()
         pause(page, 0.35)
