@@ -10,6 +10,22 @@ def assert_clean(page: Page, errors: list[str], label: str) -> None:
     )
 
 
+def attach_error_capture(page: Page, errors: list[str]) -> None:
+    def on_console(message) -> None:
+        if message.type != "error":
+            return
+        location = message.location
+        suffix = f" @ {location.get('url')}" if location.get("url") else ""
+        errors.append(f"{message.text}{suffix}")
+
+    page.on("console", on_console)
+    page.on("pageerror", lambda error: errors.append(str(error)))
+    page.on(
+        "response",
+        lambda response: errors.append(f"HTTP {response.status} {response.url}") if response.status >= 400 else None,
+    )
+
+
 def enter_exhibit(page: Page, sample_index: int, title: str) -> None:
     page.get_by_role("button", name="Open source desk").nth(sample_index).click()
     page.get_by_role("heading", name="Keep the memory. Question the guess.").wait_for()
@@ -34,8 +50,7 @@ with sync_playwright() as playwright:
 
     desktop_errors: list[str] = []
     page = browser.new_page(viewport={"width": 1440, "height": 1000})
-    page.on("console", lambda message: desktop_errors.append(message.text) if message.type == "error" else None)
-    page.on("pageerror", lambda error: desktop_errors.append(str(error)))
+    attach_error_capture(page, desktop_errors)
     page.goto(BASE_URL, wait_until="networkidle")
     enter_exhibit(page, 0, "Lantern Lane, 1998")
     page.screenshot(path="/tmp/keepscape-qa/lantern-start.png", full_page=True)
@@ -61,8 +76,7 @@ with sync_playwright() as playwright:
 
     sequence_errors: list[str] = []
     page = browser.new_page(viewport={"width": 1440, "height": 1000})
-    page.on("console", lambda message: sequence_errors.append(message.text) if message.type == "error" else None)
-    page.on("pageerror", lambda error: sequence_errors.append(str(error)))
+    attach_error_capture(page, sequence_errors)
     page.goto(BASE_URL, wait_until="networkidle")
     enter_exhibit(page, 1, "Four Moves at the Repair Bench")
     page.get_by_role("button", name="Ring").click()
@@ -79,8 +93,7 @@ with sync_playwright() as playwright:
 
     mobile_errors: list[str] = []
     mobile = browser.new_page(viewport={"width": 390, "height": 844}, device_scale_factor=1)
-    mobile.on("console", lambda message: mobile_errors.append(message.text) if message.type == "error" else None)
-    mobile.on("pageerror", lambda error: mobile_errors.append(str(error)))
+    attach_error_capture(mobile, mobile_errors)
     mobile.goto(BASE_URL, wait_until="networkidle")
     mobile.get_by_role("heading", name="Walk into a true story.").wait_for()
     mobile.screenshot(path="/tmp/keepscape-qa/mobile-home.png", full_page=True)
