@@ -1,0 +1,107 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Illustrated night market memory stage</title>
+  <desc id="desc">An interpretive paper-cut night market with three lanterns, a ticket, and an empty bicycle. No people are depicted.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#102b2a"/>
+      <stop offset=".58" stop-color="#21453d"/>
+      <stop offset="1" stop-color="#34241c"/>
+    </linearGradient>
+    <linearGradient id="lane" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#5b3827"/>
+      <stop offset="1" stop-color="#1a2822"/>
+    </linearGradient>
+    <radialGradient id="halo">
+      <stop stop-color="#ffd36c" stop-opacity=".72"/>
+      <stop offset=".38" stop-color="#f69d43" stop-opacity=".24"/>
+      <stop offset="1" stop-color="#f69d43" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="brick" width="80" height="40" patternUnits="userSpaceOnUse">
+      <path d="M0 0h80v40H0z" fill="none" stroke="#f5dcb0" stroke-opacity=".07"/>
+      <path d="M40 0v40M0 20h80" stroke="#f5dcb0" stroke-opacity=".05"/>
+    </pattern>
+    <filter id="paper">
+      <feTurbulence baseFrequency=".7" numOctaves="3" seed="18" type="fractalNoise"/>
+      <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 .13 0"/>
+    </filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="18"/></filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#sky)"/>
+  <circle cx="1318" cy="126" r="44" fill="#f8e2a0" opacity=".7"/>
+  <circle cx="1318" cy="126" r="78" fill="#f8e2a0" opacity=".08"/>
+  <path d="M0 207 182 136l210 74 190-125 203 126 238-86 230 94 197-91 150 55V0H0Z" fill="#0b2222" opacity=".62"/>
+
+  <path d="M0 284 330 216v526H0Z" fill="#281d18"/>
+  <path d="M330 223 583 260v442l-253 40Z" fill="#553227"/>
+  <path d="M0 284 583 223v519L0 810Z" fill="url(#brick)"/>
+  <path d="M1600 237 1280 207v531l320 83Z" fill="#241b18"/>
+  <path d="M1280 207 1066 254v462l214 22Z" fill="#5a3628"/>
+  <path d="M1066 254 1600 237v584l-534-105Z" fill="url(#brick)"/>
+
+  <path d="M0 491 296 397l281 38-68 118-509 68Z" fill="#df5538"/>
+  <path d="m0 491 58-18 34 94 48-116 56-17 36 111 44-128 20-20 281 38-68 118-509 68Z" fill="#ffd081" opacity=".33"/>
+  <path d="M1600 470 1324 391l-294 50 76 117 494 61Z" fill="#d8913c"/>
+  <path d="m1600 470-52-15-35 102-48-121-57-16-38 119-46-148-294 50 76 117 494 61Z" fill="#f5cf7c" opacity=".31"/>
+
+  <path d="M365 900 694 504h221l344 396Z" fill="url(#lane)"/>
+  <path d="m655 900 109-396h72l124 396Z" fill="#f3c276" opacity=".08"/>
+  <path d="M0 900V665l421-72 181 307Z" fill="#182c26"/>
+  <path d="M1600 900V669l-439-77-173 308Z" fill="#172b26"/>
+
+  <g opacity=".88">
+    <rect x="70" y="548" width="336" height="180" rx="4" fill="#6c3c28"/>
+    <rect x="91" y="575" width="294" height="112" fill="#1e312a"/>
+    <path d="M109 668h255" stroke="#f5bd66" stroke-width="6" stroke-dasharray="12 13"/>
+    <rect x="1190" y="551" width="342" height="184" rx="4" fill="#6a402c"/>
+    <rect x="1212" y="576" width="298" height="116" fill="#1c312a"/>
+    <g fill="#efc05f"><ellipse cx="1272" cy="649" rx="33" ry="18"/><ellipse cx="1350" cy="649" rx="33" ry="18"/><ellipse cx="1429" cy="649" rx="33" ry="18"/></g>
+  </g>
+
+  <path d="M107 80C471 183 972 93 1498 184" fill="none" stroke="#e4c88b" stroke-width="4" opacity=".76"/>
+  <path d="M151 118C534 221 1048 128 1453 235" fill="none" stroke="#caa966" stroke-width="2" opacity=".55"/>
+  <g fill="#f3bd54">
+    <circle cx="142" cy="91" r="6"/><circle cx="420" cy="137" r="6"/><circle cx="689" cy="143" r="6"/><circle cx="984" cy="132" r="6"/><circle cx="1275" cy="158" r="6"/><circle cx="1457" cy="181" r="6"/>
+  </g>
+
+  <g transform="translate(288 242)">
+    <circle r="130" fill="url(#halo)" filter="url(#soft)"/>
+    <path d="M-43-59h86l20 37-17 87H-46L-63-22Z" fill="#df4b2f" stroke="#ffe1a1" stroke-width="6"/>
+    <path d="M-39-37h78M-48 5h96M-44 42h88" stroke="#ffd56f" stroke-width="12"/>
+    <path d="M-25-72h50M-28 71h56" stroke="#2a1812" stroke-width="10"/>
+    <path d="M0 70v40" stroke="#f4bf5e" stroke-width="6"/>
+  </g>
+  <g transform="translate(784 178)">
+    <circle r="144" fill="url(#halo)" filter="url(#soft)"/>
+    <path d="M-48-51Q0-80 48-51l18 57-24 69h-84L-66 6Z" fill="#f2b648" stroke="#ffe9b4" stroke-width="7"/>
+    <path d="M-39-20h78M-49 21h98" stroke="#d44f34" stroke-width="9"/>
+    <path d="M-28-72h56M-30 79h60" stroke="#251b16" stroke-width="10"/>
+    <path d="M0 80v82M-20 98 0 120l20-22" fill="none" stroke="#df4b2f" stroke-width="7"/>
+  </g>
+  <g transform="translate(1262 274)">
+    <circle r="126" fill="url(#halo)" filter="url(#soft)"/>
+    <path d="M-42-57h84L58-9 40 62h-80L-58-9Z" fill="#fff0ba" stroke="#e7c875" stroke-width="6"/>
+    <path d="M-35-69h70M-32 69h64" stroke="#2b2019" stroke-width="10"/>
+    <path d="M0 67v35" stroke="#f3c661" stroke-width="5"/>
+  </g>
+
+  <g transform="translate(538 704) rotate(-8)">
+    <path d="M-45-25h92v56H-45c10-13 10-43 0-56Z" fill="#d94331" stroke="#ffe4aa" stroke-width="5"/>
+    <path d="M-18-11h44M-18 2h54M-18 15h34" stroke="#f7c47a" stroke-width="4" opacity=".8"/>
+    <circle cx="-42" cy="3" r="7" fill="#152b26"/>
+  </g>
+
+  <g transform="translate(1398 704)" fill="none" stroke="#e4c685" stroke-width="10" opacity=".72">
+    <circle cx="-56" cy="65" r="66"/><circle cx="72" cy="65" r="66"/>
+    <path d="m-56 65 53-105 75 105H-56l28-63h61M-19-55h52M72 65l-46-115h56"/>
+    <circle cx="73" cy="-50" r="14" fill="#e9b94f" stroke="#4c3325" stroke-width="6"/>
+  </g>
+
+  <g opacity=".5" fill="#f2c56c">
+    <ellipse cx="232" cy="846" rx="160" ry="15"/><ellipse cx="794" cy="834" rx="96" ry="11"/><ellipse cx="1308" cy="852" rx="172" ry="14"/>
+  </g>
+  <rect width="1600" height="900" filter="url(#paper)" opacity=".22"/>
+  <g transform="translate(29 852)">
+    <rect width="342" height="29" rx="2" fill="#0d2421" opacity=".8"/>
+    <text x="14" y="19" fill="#f9d88f" font-family="monospace" font-size="12" letter-spacing="2">GENERATED INTERPRETATION · SAMPLE</text>
+  </g>
+</svg>

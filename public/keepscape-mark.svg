@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-labelledby="title desc">
+  <title id="title">Keepscape arch mark</title>
+  <desc id="desc">A warm doorway with a point of light, representing an evidence-backed entrance into a memory.</desc>
+  <rect width="240" height="240" rx="64" fill="#171512"/>
+  <path d="M56 190V105c0-44 26-72 64-72s64 28 64 72v85" fill="#f4e9d2"/>
+  <path d="M84 190v-82c0-28 14-47 36-47s36 19 36 47v82" fill="#db5a3c"/>
+  <circle cx="120" cy="114" r="17" fill="#f5c65d"/>
+  <path d="M44 190h152" stroke="#f4e9d2" stroke-width="14" stroke-linecap="round"/>
+</svg>

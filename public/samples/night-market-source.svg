@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">Synthetic night market source sheet</title>
+  <desc id="desc">A deterministic illustrated source fixture with three distinct lanterns and no people.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#34312b"/><stop offset="1" stop-color="#151b19"/></linearGradient>
+    <filter id="grain"><feTurbulence baseFrequency=".65" numOctaves="4" seed="11"/><feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 .16 0"/></filter>
+    <radialGradient id="g"><stop stop-color="#ffd776" stop-opacity=".65"/><stop offset="1" stop-color="#d85d35" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1200" height="675" fill="#d5c7a2"/>
+  <rect x="24" y="24" width="1152" height="627" rx="5" fill="url(#bg)"/>
+  <path d="M24 270 260 212l205 40 229-78 248 85 234-43v435H24Z" fill="#35271f"/>
+  <path d="M24 429 327 344l298 70 274-93 277 99v231H24Z" fill="#16231f"/>
+  <path d="M32 72C352 161 814 73 1162 153" fill="none" stroke="#d9bb7a" stroke-width="4" opacity=".75"/>
+  <g transform="translate(180 190)">
+    <circle r="120" fill="url(#g)"/>
+    <path d="M-52-62h104l20 49-22 112H-50L-72-13Z" fill="#b94a32" stroke="#e4bd70" stroke-width="8"/>
+    <path d="M-46-32h92M-57 15h114M-50 58h100" stroke="#dd9e4b" stroke-width="14"/>
+    <path d="M-30-80h60M-34 107h68" stroke="#161d1b" stroke-width="12"/>
+  </g>
+  <g transform="translate(592 176)">
+    <circle r="130" fill="url(#g)"/>
+    <path d="M-57-55Q0-91 57-55l20 65-28 99h-98L-77 10Z" fill="#d58c38" stroke="#f0ce85" stroke-width="8"/>
+    <path d="M-46-18h92M-57 35h114" stroke="#a83e2e" stroke-width="12"/>
+    <path d="M-31-79h62M-34 116h68" stroke="#161d1b" stroke-width="12"/>
+    <path d="M0 115v93M-25 140 0 168l25-28" fill="none" stroke="#bd4933" stroke-width="9"/>
+  </g>
+  <g transform="translate(966 205)">
+    <circle r="115" fill="url(#g)"/>
+    <path d="M-50-67h100L68-8 48 94h-96L-68-8Z" fill="#ead9a2" stroke="#c7a864" stroke-width="8"/>
+    <path d="M-32-85h64M-36 102h72" stroke="#161d1b" stroke-width="12"/>
+  </g>
+  <rect x="24" y="24" width="1152" height="627" filter="url(#grain)" opacity=".42"/>
+  <path d="M42 46h1116v587H42Z" fill="none" stroke="#e9d9b3" stroke-width="2" opacity=".5"/>
+  <g transform="translate(44 603)">
+    <rect width="660" height="30" fill="#e8d9b8"/>
+    <text x="13" y="20" fill="#2e2922" font-family="monospace" font-size="13" font-weight="700" letter-spacing="1.8">DETERMINISTIC SAMPLE ARCHIVE · NOT A REAL FAMILY RECORD</text>
+  </g>
+</svg>

@@ -1,0 +1,67 @@
+{
+  "receiptVersion": "1.0",
+  "capturedAt": "2026-07-15",
+  "product": "Keepscape",
+  "codexSdkVersion": "0.144.4",
+  "mode": "live",
+  "model": "Codex account default via Codex SDK",
+  "trace": [
+    {
+      "agent": "Codex",
+      "action": "Created a typed interaction in an isolated no-network workspace.",
+      "status": "passed"
+    },
+    {
+      "agent": "Truth gate",
+      "action": "Revalidated the manifest after the Codex build pass.",
+      "status": "passed"
+    },
+    {
+      "agent": "Typed runtime",
+      "action": "Prepared the schema-safe interaction for rendering.",
+      "status": "passed"
+    }
+  ],
+  "interaction": {
+    "kind": "collect",
+    "prompt": "Select all three lantern hotspots to complete the collection.",
+    "targetHotspotIds": [
+      "hotspot-painted-lantern",
+      "hotspot-tasseled-lantern",
+      "hotspot-pale-lantern"
+    ],
+    "completionMessage": "All three lantern hotspots are collected. The interaction is complete."
+  },
+  "codexAgents": [
+    {
+      "name": "Codex interaction builder",
+      "role": "Created the story-specific typed mechanic in an isolated, no-network workspace.",
+      "result": "Refined the manifest's single interaction as an order-independent collection task.",
+      "status": "passed"
+    },
+    {
+      "name": "Codex grounding review",
+      "role": "Checked evidence references without inventing family history.",
+      "result": "Uses only the three existing lantern hotspot IDs. The copy describes interaction progress and completion without adding story facts or altering claims.",
+      "status": "reviewed"
+    }
+  ],
+  "codexTests": [
+    {
+      "name": "Codex interaction compile",
+      "detail": "The scene explicitly allows collecting the three lanterns in any order, and each hotspot represents independent evidence. No required sequence is established.",
+      "status": "passed"
+    },
+    {
+      "name": "Hotspot allowlist",
+      "detail": "3 distinct generated interaction references resolve in the scene.",
+      "status": "passed"
+    },
+    {
+      "name": "Post-build schema",
+      "detail": "The final manifest passed Zod and referential checks.",
+      "status": "passed"
+    }
+  ],
+  "note": "No family media, credentials, private-user prompts, or temporary workspace paths are retained."
+}

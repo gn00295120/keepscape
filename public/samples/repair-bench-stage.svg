@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">Illustrated bicycle repair memory stage</title>
+  <desc id="desc">An interpretive workshop bench with an upside-down bicycle, chain, small wrench, and bell. No people are depicted.</desc>
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#29443b"/><stop offset="1" stop-color="#112b26"/></linearGradient>
+    <linearGradient id="bench"><stop stop-color="#9d6039"/><stop offset="1" stop-color="#59351f"/></linearGradient>
+    <radialGradient id="lamp"><stop stop-color="#d8f1a5" stop-opacity=".55"/><stop offset="1" stop-color="#d8f1a5" stop-opacity="0"/></radialGradient>
+    <pattern id="holes" width="44" height="44" patternUnits="userSpaceOnUse"><circle cx="22" cy="22" r="3" fill="#c9d5aa" opacity=".22"/></pattern>
+    <filter id="paper"><feTurbulence baseFrequency=".75" numOctaves="3" seed="7"/><feColorMatrix values="1 0 0 0 0 0 1 0 0 0 0 0 1 0 0 0 0 0 .12 0"/></filter>
+  </defs>
+  <rect width="1600" height="900" fill="url(#wall)"/>
+  <rect x="62" y="66" width="1476" height="563" rx="8" fill="#17352e" stroke="#b2c18e" stroke-opacity=".25" stroke-width="5"/>
+  <rect x="62" y="66" width="1476" height="563" fill="url(#holes)"/>
+  <circle cx="917" cy="201" r="330" fill="url(#lamp)"/>
+
+  <path d="M717 0h362l-64 134H781Z" fill="#d5d9ad" opacity=".8"/>
+  <path d="M897 135v58" stroke="#c2ce95" stroke-width="10"/>
+  <path d="M0 658h1600v242H0Z" fill="url(#bench)"/>
+  <path d="M0 658h1600" stroke="#d4975a" stroke-width="18"/>
+  <path d="M188 900V723h62v177M1352 900V723h62v177" stroke="#35251c" stroke-width="28"/>
+  <g opacity=".32" stroke="#d5a16a" stroke-width="4"><path d="M0 730h1600M0 807h1600"/><path d="M218 658l-28 242M506 658l18 242M869 658l-7 242M1211 658l31 242"/></g>
+
+  <g transform="translate(490 420) rotate(180)" fill="none" stroke="#d9d7ad" stroke-width="16">
+    <circle cx="-215" cy="35" r="174"/><circle cx="223" cy="35" r="174"/>
+    <path d="m-215 35 157-264 281 264H-215l109-190h206M-74-249H72M223 35l-146-290h176"/>
+    <path d="M88-254h95" stroke="#df6b35" stroke-width="22"/>
+    <path d="M-25-227h-115" stroke="#b8db90" stroke-width="22"/>
+    <circle cx="14" cy="35" r="51" stroke="#df6b35" stroke-width="12"/>
+    <circle cx="14" cy="35" r="36" stroke="#b8db90" stroke-width="5" stroke-dasharray="8 10"/>
+  </g>
+
+  <g transform="translate(930 226)">
+    <circle r="46" fill="#c8d892" stroke="#243a31" stroke-width="9"/>
+    <path d="M-29 0h58M0-28v56" stroke="#607d54" stroke-width="6"/>
+    <path d="M42-8h48" stroke="#d7d6ad" stroke-width="13"/>
+    <path d="M-70 13c-42 7-60 32-62 66" fill="none" stroke="#b8db90" stroke-width="6" stroke-dasharray="10 10" opacity=".7"/>
+  </g>
+
+  <g transform="translate(1153 610) rotate(-24)">
+    <path d="M-19-102a58 58 0 0 0 0 74L-90 74a34 34 0 1 0 49 34L29 4a58 58 0 0 0 68-28l-46 14-48-32 4-48-26-12Z" fill="#d1d8ad" stroke="#233a31" stroke-width="9"/>
+    <circle cx="-67" cy="92" r="12" fill="#233a31"/>
+  </g>
+
+  <g transform="translate(813 685)">
+    <ellipse rx="124" ry="44" fill="#1a2e28" opacity=".48"/>
+    <path d="M-102 8c36-65 167-75 212-9" fill="none" stroke="#df6b35" stroke-width="18" stroke-dasharray="7 9"/>
+    <path d="m-103 7 12-26M109 0l-8-27" stroke="#b8db90" stroke-width="8"/>
+  </g>
+
+  <g fill="none" stroke="#b8db90" stroke-width="12" opacity=".72">
+    <path d="M168 155v180h88"/><path d="M284 138v202h84"/>
+    <path d="M1325 134v171h88"/><path d="M1244 156v149h-75"/>
+  </g>
+  <g fill="#df6b35">
+    <rect x="141" y="332" width="138" height="24" rx="10"/><rect x="260" y="337" width="132" height="24" rx="10"/>
+    <rect x="1296" y="302" width="139" height="24" rx="10"/><rect x="1144" y="302" width="129" height="24" rx="10"/>
+  </g>
+  <rect width="1600" height="900" filter="url(#paper)" opacity=".25"/>
+  <g transform="translate(28 850)"><rect width="342" height="29" rx="2" fill="#0b221d" opacity=".82"/><text x="14" y="19" fill="#cce7a0" font-family="monospace" font-size="12" letter-spacing="2">GENERATED INTERPRETATION · SAMPLE</text></g>
+</svg>

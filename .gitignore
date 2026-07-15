@@ -1,0 +1,36 @@
+# dependencies
+/node_modules
+
+# Next.js
+/.next/
+/out/
+/.open-next/
+/.wrangler/
+
+# tests and coverage
+/coverage/
+/playwright-report/
+/test-results/
+
+# local runtime artifacts
+/.keepscape/
+/tmp/
+
+# environment files
+.env
+.env.local
+.env.*.local
+.dev.vars*
+.env.cloudflare*
+
+# editor and OS
+.DS_Store
+*.swp
+
+# logs
+*.log
+pnpm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
