@@ -1,7 +1,18 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, Eye, MapPin, Volume2 } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowRight,
+  ArrowUp,
+  Check,
+  Eye,
+  Image as ImageIcon,
+  MapPin,
+  ShieldCheck,
+  Volume2,
+} from "lucide-react";
 import {
   useMemo,
   useRef,
@@ -11,7 +22,7 @@ import {
   type WheelEvent as ReactWheelEvent,
 } from "react";
 
-import type { ExhibitScene, Hotspot, Source, SpatialPlane } from "@/lib/exhibit-schema";
+import type { ExhibitScene, GroundedClaim, Hotspot, Source, SpatialPlane } from "@/lib/exhibit-schema";
 
 import styles from "./spatial-stage.module.css";
 
@@ -19,10 +30,14 @@ type HotspotState = "complete" | "next" | "idle";
 
 export interface SpatialStageProps {
   scene: ExhibitScene;
+  claims: GroundedClaim[];
   sources: Source[];
   selectedHotspotId: string | null;
   hotspotStates: Record<string, HotspotState>;
+  lensActive: boolean;
+  onLensChange: (active: boolean) => void;
   onHotspot: (hotspot: Hotspot) => void;
+  onOpenSources: () => void;
   onRequestFlat: () => void;
 }
 
@@ -35,6 +50,33 @@ type DragOrigin = {
 
 const clamp = (value: number, minimum: number, maximum: number) =>
   Math.min(maximum, Math.max(minimum, value));
+
+function formatTime(seconds: number | undefined): string {
+  if (seconds === undefined) return "Full recording";
+  const minutes = Math.floor(seconds / 60);
+  const remainder = Math.floor(seconds % 60);
+  return `${minutes}:${remainder.toString().padStart(2, "0")}`;
+}
+
+function formatAudioCitation(source: Source): string {
+  const label = source.label.split(" · ")[0];
+  const start = source.timeStartSeconds;
+  const end = source.timeEndSeconds;
+  if (start === undefined) return `${label} · full recording`;
+  if (end === undefined) return `${label} · from ${formatTime(start)}`;
+  return `${label} · ${formatTime(start)}–${formatTime(end)}`;
+}
+
+function humanDecisionLabel(source: Source | undefined, claims: GroundedClaim[]): string {
+  if (!source) return "No added claim";
+  if (source.humanRole === "confirmation") {
+    const confirmedClaim = claims.find((claim) => claim.id === source.confirmedClaimId);
+    return confirmedClaim ? `Confirmed · ${confirmedClaim.text}` : "Human confirmation recorded";
+  }
+  if (source.humanRole === "uncertainty-preserved") return "Kept uncertain · not confirmed as fact";
+  if (source.humanRole === "story-note") return "Human account cited · not a confirmation";
+  return "Generated wording reviewed · not a factual confirmation";
+}
 
 function Plane({
   plane,
@@ -143,18 +185,63 @@ function Plane({
   );
 }
 
+function SourcePortal({ source }: { source: Source }) {
+  const [aspectRatio, setAspectRatio] = useState(3 / 2);
+  const wholePhoto = source.region &&
+    source.region.x === 0 && source.region.y === 0 && source.region.width === 1 && source.region.height === 1;
+  const photoLabel = source.region ? (wholePhoto ? "Full photo view" : "Photo region") : "Photo source view";
+
+  return (
+    <figure className={styles.sourcePortal}>
+      <div className={styles.sourcePortalImage} style={{ aspectRatio }}>
+        <Image
+          src={source.assetPath ?? ""}
+          alt={`Source archive view: ${source.label}`}
+          fill
+          sizes="420px"
+          unoptimized
+          onLoad={(event) => {
+            const { naturalHeight, naturalWidth } = event.currentTarget;
+            if (naturalHeight > 0) setAspectRatio(naturalWidth / naturalHeight);
+          }}
+        />
+        {source.region ? (
+          <span
+            className={styles.sourcePortalRegion}
+            style={{
+              left: `${source.region.x * 100}%`,
+              top: `${source.region.y * 100}%`,
+              width: `${source.region.width * 100}%`,
+              height: `${source.region.height * 100}%`,
+            }}
+          >
+            Source match
+          </span>
+        ) : null}
+      </div>
+      <figcaption>
+        <span><ImageIcon size={12} aria-hidden="true" /> {photoLabel}</span>
+        <strong>{source.label}</strong>
+      </figcaption>
+    </figure>
+  );
+}
+
 export function SpatialStage({
   scene,
+  claims,
   sources,
   selectedHotspotId,
   hotspotStates,
+  lensActive,
+  onLensChange,
   onHotspot,
+  onOpenSources,
   onRequestFlat,
 }: SpatialStageProps) {
   const spatial = scene.spatial;
   const [depth, setDepth] = useState(0);
   const [yaw, setYaw] = useState(0);
-  const [lensActive, setLensActive] = useState(false);
   const dragOrigin = useRef<DragOrigin | null>(null);
   const sourceById = useMemo(() => new Map(sources.map((source) => [source.id, source])), [sources]);
 
@@ -174,9 +261,49 @@ export function SpatialStage({
   const selectedHotspot = scene.hotspots.find((hotspot) => hotspot.id === selectedHotspotId);
   const selectedPlane = spatial.planes.find((plane) => plane.id === selectedHotspot?.spatialAnchor?.planeId);
   const selectedSource = selectedPlane ? sourceById.get(selectedPlane.sourceId) : undefined;
+  const selectedAudioSource = selectedHotspot?.sourceIds
+    .map((sourceId) => sourceById.get(sourceId))
+    .find((source) => source?.kind === "audio");
+  const selectedHumanSources = selectedHotspot?.sourceIds
+    .map((sourceId) => sourceById.get(sourceId))
+    .filter((source): source is Source => source?.kind === "human") ?? [];
+  const selectedHumanSource =
+    selectedHumanSources.find((source) => source.humanRole === "confirmation") ??
+    selectedHumanSources.find((source) => source.humanRole === "uncertainty-preserved") ??
+    selectedHumanSources.find((source) => source.humanRole === "story-note") ??
+    selectedHumanSources[0];
+  const interactionIds = scene.interaction.kind === "collect"
+    ? scene.interaction.targetHotspotIds
+    : scene.interaction.stepHotspotIds;
+  const completedInteractionCount = interactionIds.filter(
+    (hotspotId) => hotspotStates[hotspotId] === "complete",
+  ).length;
+  const sceneComplete = interactionIds.length > 0 && completedInteractionCount === interactionIds.length;
+  const previewPlane = spatial.planes.find((plane) => plane.slot === "far-center") ?? spatial.planes[0];
+  const previewSource = previewPlane ? sourceById.get(previewPlane.sourceId) : undefined;
   const voiceOnly = voiceHotspots.every((hotspot) =>
     hotspot.sourceIds.every((sourceId) => sourceById.get(sourceId)?.kind !== "photo"),
   );
+  const visualSourceLabel = selectedSource
+    ? selectedSource.region
+      ? "Region matched"
+      : "Source view cited"
+    : "Waiting";
+  const humanLabel = humanDecisionLabel(selectedHumanSource, claims);
+  const supportTypes = [selectedSource ? "photo" : null, selectedAudioSource ? "cited audio" : null]
+    .filter((value): value is string => Boolean(value));
+  const supportStatement = supportTypes.length === 2
+    ? "The photo and cited audio support this detail."
+    : supportTypes.length === 1
+      ? `The ${supportTypes[0]} supports this detail.`
+      : selectedHumanSource
+        ? "The human decision is recorded for this detail."
+        : "Select an object to inspect its evidence.";
+  const sceneCompletionMessage = scene.interaction.kind === "collect"
+    ? scene.interaction.completionMessage
+    : scene.interaction.successMessage;
+  const sceneCompletionHeadline = sceneCompletionMessage.match(/^.*?[.!?](?:\s|$)/)?.[0].trim()
+    ?? sceneCompletionMessage;
   const worldStyle = {
     "--camera-depth": `${depth * 142}px`,
     "--camera-yaw": `${yaw * 14}deg`,
@@ -220,7 +347,7 @@ export function SpatialStage({
             className={styles.lensButton}
             data-active={lensActive}
             type="button"
-            onClick={() => setLensActive((current) => !current)}
+            onClick={() => onLensChange(!lensActive)}
             aria-pressed={lensActive}
           >
             <Eye size={15} aria-hidden="true" /> {lensActive ? "Evidence Lens on" : "Turn on Evidence Lens"}
@@ -232,6 +359,7 @@ export function SpatialStage({
       <div
         className={styles.viewport}
         data-lens={lensActive}
+        data-complete={sceneComplete}
         tabIndex={0}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
@@ -256,9 +384,15 @@ export function SpatialStage({
         aria-label="Walkable photo diorama. Use arrow keys or the camera controls to move."
       >
         <div className={styles.generatedWorld} aria-hidden="true">
+          <span
+            className={styles.portalPreview}
+            style={{ backgroundImage: previewSource?.assetPath ? `url(${previewSource.assetPath})` : undefined }}
+          />
           <span className={styles.ceilingGrid} />
           <span className={styles.floorGrid} />
           <span className={styles.vanishingLight} />
+          <span className={styles.memoryHaze} />
+          <span className={styles.memoryDust} />
         </div>
         <div className={styles.world} style={worldStyle} data-lens={lensActive} data-preset={spatial.preset}>
           {spatial.planes.map((plane) => (
@@ -281,10 +415,67 @@ export function SpatialStage({
         </div>
 
         {lensActive ? (
-          <div className={styles.lensReceipt} aria-live="polite">
-            <span>Evidence Lens active</span>
-            <strong>{selectedSource?.label ?? "Select a sourced object"}</strong>
-            <p>Citation points to this source · placement, depth and motion are interpretation.</p>
+          <aside className={styles.truthThread} aria-live="polite" aria-label="Evidence Lens truth thread">
+            <header className={styles.truthThreadHeader}>
+              <span><ShieldCheck size={14} aria-hidden="true" /> Truth Thread</span>
+              <small>Evidence Lens active</small>
+              <strong>Every detail has a way home.</strong>
+            </header>
+
+            {selectedSource?.kind === "photo" && selectedSource.assetPath ? (
+              <SourcePortal source={selectedSource} />
+            ) : (
+              <div className={styles.emptyPortal}>
+                <MapPin size={22} aria-hidden="true" />
+                <strong>Select a glowing object</strong>
+                <span>Its original evidence will appear here.</span>
+              </div>
+            )}
+
+            <div className={styles.evidenceChain}>
+              <div data-present={Boolean(selectedSource)}>
+                <span>01</span>
+                <p><small>Visual source</small><strong>{visualSourceLabel}</strong></p>
+              </div>
+              <div data-present={Boolean(selectedAudioSource)}>
+                <span>02</span>
+                <p>
+                  <small>Cited audio</small>
+                  <strong>
+                    {selectedAudioSource
+                      ? formatAudioCitation(selectedAudioSource)
+                      : "Not cited"}
+                  </strong>
+                </p>
+                <i className={styles.waveform} aria-hidden="true">
+                  {Array.from({ length: 11 }, (_, index) => <b key={index} />)}
+                </i>
+              </div>
+              <div data-present={Boolean(selectedHumanSource)}>
+                <span>03</span>
+                <p><small>Human decision</small><strong>{humanLabel}</strong></p>
+              </div>
+            </div>
+
+            <p className={styles.truthBoundary}>{supportStatement} Placement, depth and motion remain interpretation.</p>
+            <button className={styles.openArchiveButton} type="button" onClick={onOpenSources}>
+              Open full source archive <ArrowRight size={14} aria-hidden="true" />
+            </button>
+          </aside>
+        ) : null}
+
+        {lensActive && selectedSource ? (
+          <svg className={styles.truthThreadLine} viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M 48 36 C 61 30, 64 42, 76 42" />
+            <circle cx="48" cy="36" r="1" />
+            <circle cx="76" cy="42" r="1" />
+          </svg>
+        ) : null}
+
+        {sceneComplete ? (
+          <div className={styles.completionBloom} role="status">
+            <span>{completedInteractionCount}/{interactionIds.length} · archive awakened</span>
+            <strong>{sceneCompletionHeadline}</strong>
           </div>
         ) : null}
 

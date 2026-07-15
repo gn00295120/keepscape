@@ -36,6 +36,7 @@ with sync_playwright() as playwright:
     spatial.wait_for()
     assert spatial.get_by_text("Generated space · traceable story", exact=True).count() == 1
     assert spatial.get_by_text("Source plane", exact=True).count() == 3
+    page.wait_for_timeout(1_400)
     page.screenshot(path=str(OUT / "spatial-start.png"), full_page=True)
 
     spatial.get_by_role("button", name="Move deeper").click()
@@ -63,10 +64,10 @@ with sync_playwright() as playwright:
     spatial.get_by_role("button", name="Turn on Evidence Lens", exact=True).click()
     spatial.get_by_text("Evidence Lens active", exact=True).wait_for()
     spatial.get_by_text("cited photo region", exact=True).wait_for()
+    page.wait_for_timeout(700)
     page.screenshot(path=str(OUT / "spatial-evidence-lens.png"), full_page=True)
 
-    trace = page.get_by_role("button", name="Trace to 3 sources")
-    trace.click()
+    spatial.get_by_role("button", name="Open full source archive").click()
     drawer = page.get_by_role("dialog", name="Source archive")
     drawer.wait_for()
     drawer.get_by_text("AI-generated fictional demo photo · left view", exact=True).wait_for()
@@ -74,11 +75,13 @@ with sync_playwright() as playwright:
     page.screenshot(path=str(OUT / "spatial-source-drawer.png"), full_page=True)
     drawer.get_by_role("button", name="Close source archive").click()
 
+    spatial.get_by_role("button", name="Evidence Lens on", exact=True).click()
     page.get_by_role("button", name="Close memory detail").click()
     spatial.get_by_role("button", name="Tasseled", exact=True).click()
     page.get_by_role("button", name="Close memory detail").click()
     spatial.get_by_role("button", name="Pale", exact=True).click()
     page.get_by_text("Archive trail complete", exact=True).wait_for()
+    page.wait_for_timeout(800)
     page.screenshot(path=str(OUT / "spatial-complete.png"), full_page=True)
 
     assert page.locator("body").evaluate("element => element.scrollWidth") <= page.viewport_size["width"]
@@ -93,6 +96,7 @@ with sync_playwright() as playwright:
     mobile_spatial.get_by_role("button", name="Painted", exact=True).click()
     mobile_spatial.get_by_role("button", name="Turn on Evidence Lens", exact=True).click()
     mobile_spatial.get_by_text("cited photo region", exact=True).wait_for()
+    mobile.wait_for_timeout(700)
     mobile.screenshot(path=str(OUT / "mobile-spatial-evidence-lens.png"), full_page=True)
     assert mobile.locator("body").evaluate("element => element.scrollWidth") <= mobile.viewport_size["width"]
     mobile.close()

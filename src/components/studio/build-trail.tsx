@@ -6,7 +6,7 @@ import { ArrowRight, Check, Code2, FlaskConical, Sparkles, UserRoundCheck } from
 import type { ExhibitManifest } from "@/lib/exhibit-schema";
 
 const LIVE_CODEX_RECEIPT_URL =
-  "https://github.com/gn00295120/keepscape/blob/f03dc22/docs/evidence/codex-live-run.json";
+  "https://github.com/gn00295120/keepscape/blob/f03dc2220ca304f2a8340b368ba1e3b166eb22ab/docs/evidence/codex-live-run.json";
 
 type BuildResult = {
   mode: "demo" | "live";

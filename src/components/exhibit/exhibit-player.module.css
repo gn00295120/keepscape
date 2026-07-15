@@ -184,6 +184,10 @@
   border-right: 1px solid color-mix(in srgb, var(--ink) 16%, transparent);
 }
 
+.sceneRailToggle {
+  display: none;
+}
+
 .archiveKicker,
 .sceneEyebrow,
 .microHeading {
@@ -411,6 +415,10 @@
 .stageShell {
   position: relative;
   padding-bottom: 72px;
+}
+
+.spatialFrame {
+  min-width: 0;
 }
 
 .stage {
@@ -657,6 +665,59 @@
   font-weight: 650;
   letter-spacing: 0.06em;
   text-transform: uppercase;
+}
+
+.flatCompletionBloom {
+  position: absolute;
+  right: clamp(14px, 3vw, 38px);
+  bottom: 0;
+  left: clamp(14px, 3vw, 38px);
+  z-index: 7;
+  display: grid;
+  gap: 7px;
+  padding: 17px 22px;
+  color: var(--cream);
+  border: 1px solid color-mix(in srgb, var(--gold) 62%, transparent);
+  border-top: 3px solid var(--gold);
+  background: color-mix(in srgb, var(--ink) 92%, transparent);
+  box-shadow: 0 0 80px color-mix(in srgb, var(--gold) 24%, transparent);
+  backdrop-filter: blur(14px);
+  animation: flatBloomIn 720ms cubic-bezier(.18, .9, .2, 1) both;
+  pointer-events: none;
+  text-align: center;
+}
+
+.flatCompletionBloom span {
+  color: var(--gold);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+}
+
+.flatCompletionBloom strong {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(17px, 2vw, 26px);
+  font-weight: 500;
+}
+
+.stageShell:has(.flatCompletionBloom) .missionCard {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(18px);
+}
+
+@keyframes flatBloomIn {
+  from {
+    opacity: 0;
+    transform: translateY(34px) scale(.94);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 @media (min-width: 721px) and (max-width: 1400px) {
@@ -1359,6 +1420,546 @@
 
   .sourceButton {
     padding: 0 11px;
+  }
+}
+
+/* A spatial scene is the exhibit, not a card inside the exhibit dashboard. */
+.player[data-focus-mode="true"] {
+  height: 100svh;
+  min-height: 100svh;
+  color: var(--cream);
+  background: #08130f;
+}
+
+.player[data-focus-mode="true"]::before {
+  position: absolute;
+  opacity: .08;
+  mix-blend-mode: screen;
+}
+
+.player[data-focus-mode="true"] .playerHeader {
+  position: absolute;
+  top: 12px;
+  left: clamp(12px, 2vw, 28px);
+  z-index: 8;
+  min-height: 42px;
+  gap: 12px;
+  padding: 5px 10px;
+  color: #fff1cf;
+  border: 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgb(5 15 11 / 66%), rgb(5 15 11 / 18%));
+  box-shadow: 0 10px 30px rgb(0 0 0 / 12%);
+  backdrop-filter: blur(8px);
+}
+
+.player[data-focus-mode="true"] .brandLockup {
+  gap: 0;
+}
+
+.player[data-focus-mode="true"] .brandLockup > div,
+.player[data-focus-mode="true"] .headerRule,
+.player[data-focus-mode="true"] .truthChip {
+  display: none;
+}
+
+.player[data-focus-mode="true"] .backButton,
+.player[data-focus-mode="true"] .wordmark {
+  font-size: 14px;
+  text-shadow: 0 2px 16px rgb(0 0 0 / 45%);
+}
+
+.player[data-focus-mode="true"] .resetButton {
+  min-height: 34px;
+  padding: 0 4px;
+  color: rgb(255 241 207 / 72%);
+  font-size: 8px;
+}
+
+.player[data-focus-mode="true"] .exhibitGrid,
+.player[data-focus-mode="true"] .scenePanel,
+.player[data-focus-mode="true"] .stageShell,
+.player[data-focus-mode="true"] .spatialFrame {
+  width: 100%;
+  height: 100svh;
+  min-height: 100svh;
+}
+
+.player[data-focus-mode="true"] .exhibitGrid {
+  display: block;
+}
+
+.player[data-focus-mode="true"] .scenePanel {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
+
+.player[data-focus-mode="true"][data-scene-count="single"] .sceneRail {
+  display: none;
+}
+
+.player[data-focus-mode="true"][data-scene-count="multiple"] .sceneRail {
+  position: absolute;
+  top: 64px;
+  left: clamp(12px, 2vw, 28px);
+  z-index: 9;
+  width: min(300px, calc(100vw - 24px));
+  min-height: 0;
+  max-height: calc(100svh - 82px);
+  overflow-y: auto;
+  padding: 12px;
+  color: #fff1cf;
+  border: 1px solid rgb(255 241 207 / 18%);
+  border-radius: 3px;
+  background: rgb(7 18 14 / 90%);
+  box-shadow: 0 22px 70px rgb(0 0 0 / 32%);
+  backdrop-filter: blur(16px);
+}
+
+.player[data-focus-mode="true"] .sceneRailToggle {
+  display: flex;
+  min-height: 40px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px;
+  cursor: pointer;
+  color: #fff1cf;
+  border: 1px solid rgb(255 241 207 / 22%);
+  border-radius: 2px;
+  background: rgb(255 255 255 / 5%);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  font-weight: 650;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.player[data-focus-mode="true"] .sceneRailToggle svg {
+  width: 15px;
+  height: 15px;
+  color: var(--gold);
+}
+
+.player[data-focus-mode="true"] .sceneRail[data-collapsed="true"] {
+  width: auto;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.player[data-focus-mode="true"] .sceneRail[data-collapsed="true"] > :not(.sceneRailToggle),
+.player[data-focus-mode="true"] .sceneRail .railIntro,
+.player[data-focus-mode="true"] .sceneRail .truthNote {
+  display: none;
+}
+
+.player[data-focus-mode="true"] .sceneRail .sceneNav {
+  display: grid;
+  overflow: visible;
+  gap: 4px;
+  margin: 10px 0 0;
+}
+
+.player[data-focus-mode="true"] .sceneRail .sceneTab {
+  min-width: 0;
+  min-height: 56px;
+  padding: 8px 9px;
+  color: rgb(255 241 207 / 64%);
+  border: 0;
+  border-top: 1px solid rgb(255 241 207 / 10%);
+}
+
+.player[data-focus-mode="true"] .sceneRail .sceneTab:hover,
+.player[data-focus-mode="true"] .sceneRail .sceneTab[data-active="true"] {
+  color: #fff1cf;
+}
+
+.player[data-focus-mode="true"] .sceneRail .sceneNumber {
+  color: #fff1cf;
+  border-color: rgb(255 241 207 / 28%);
+}
+
+.player[data-focus-mode="true"] .sceneHeading {
+  position: absolute;
+  top: 72px;
+  right: clamp(16px, 2.5vw, 36px);
+  left: clamp(16px, 2.5vw, 36px);
+  z-index: 7;
+  align-items: flex-start;
+  margin: 0;
+  color: #fff1cf;
+  pointer-events: none;
+  transition: opacity 420ms ease, transform 520ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.player[data-focus-mode="true"][data-memory-active="true"] .sceneHeading {
+  opacity: 0;
+  transform: translateY(-14px);
+}
+
+.player[data-focus-mode="true"][data-memory-active="true"] .sceneHeading .sceneTools {
+  pointer-events: none;
+}
+
+.player[data-focus-mode="true"] .sceneEyebrow {
+  color: #f2bb5a;
+  text-shadow: 0 2px 16px rgb(0 0 0 / 55%);
+}
+
+.focusExhibitTitle {
+  margin: 0 0 8px;
+  color: rgb(255 241 207 / 72%);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 650;
+  letter-spacing: .13em;
+  text-shadow: 0 2px 16px rgb(0 0 0 / 55%);
+  text-transform: uppercase;
+}
+
+.player[data-focus-mode="true"] .sceneHeading h2 {
+  max-width: 17ch;
+  margin-top: 6px;
+  font-size: clamp(30px, 3vw, 48px);
+  color: #fff1cf;
+  text-wrap: balance;
+  text-shadow: 0 3px 24px rgb(0 0 0 / 72%);
+}
+
+.player[data-focus-mode="true"] .sceneTools {
+  pointer-events: auto;
+}
+
+.player[data-focus-mode="true"] .interpretationBadge {
+  min-height: 40px;
+  padding: 0 11px;
+  color: rgb(255 241 207 / 74%);
+  border: 1px solid rgb(255 241 207 / 16%);
+  background: rgb(6 17 13 / 54%);
+  backdrop-filter: blur(10px);
+}
+
+.player[data-focus-mode="true"] .sourceButton {
+  min-height: 40px;
+  color: #fff1cf;
+  border: 1px solid rgb(255 241 207 / 18%);
+  background: rgb(6 17 13 / 68%);
+  box-shadow: none;
+  backdrop-filter: blur(10px);
+}
+
+.player[data-focus-mode="true"] .sourceButton:hover {
+  border-color: var(--gold);
+  transform: translateY(-1px);
+  box-shadow: none;
+}
+
+.player[data-focus-mode="true"] .stageShell {
+  padding: 0;
+}
+
+.player[data-focus-mode="true"] .stageShell:has([data-lens="true"]) .spatialFrame {
+  position: relative;
+  z-index: 10;
+}
+
+.player[data-focus-mode="true"] .spatialFrame > section {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  flex-direction: column;
+  overflow: hidden;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+/* SpatialStage owns its internals; these structural rules only promote its
+   existing header and viewport into the focus-mode HUD. */
+.player[data-focus-mode="true"] .spatialFrame > section > :first-child {
+  position: absolute;
+  top: 12px;
+  right: clamp(12px, 2vw, 28px);
+  z-index: 8;
+  display: block;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.player[data-focus-mode="true"] .spatialFrame > section > :first-child > :first-child {
+  display: none;
+}
+
+.player[data-focus-mode="true"] .spatialFrame > section > :first-child > :last-child {
+  width: auto;
+}
+
+.player[data-focus-mode="true"] .spatialFrame > section > :nth-child(2) {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.player[data-focus-mode="true"] .spatialFrame > section > :nth-child(2) > :nth-child(3) {
+  visibility: hidden;
+  opacity: 0;
+}
+
+.player[data-focus-mode="true"] .spatialFrame > section > :nth-child(2) > nav {
+  top: auto;
+  right: clamp(12px, 2vw, 28px);
+  bottom: 18px;
+}
+
+.player[data-focus-mode="true"] .spatialFrame > section > :nth-child(2) > span:last-child {
+  top: auto;
+  right: clamp(12px, 2vw, 28px);
+  bottom: 66px;
+}
+
+.player[data-focus-mode="true"] .missionCard {
+  right: auto;
+  bottom: 84px;
+  left: clamp(12px, 2vw, 28px);
+  z-index: 6;
+  width: min(390px, calc(100% - 24px));
+  padding: 13px 15px 12px;
+  color: #fff1cf;
+  border: 1px solid rgb(255 241 207 / 17%);
+  border-top: 2px solid var(--gold);
+  background: rgb(6 17 13 / 72%);
+  box-shadow: 0 18px 50px rgb(0 0 0 / 26%);
+  backdrop-filter: blur(12px);
+  transition: opacity 260ms ease, transform 260ms ease;
+}
+
+.player[data-focus-mode="true"] .stageShell:has([data-complete="true"]) .missionCard {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(18px);
+}
+
+.player[data-focus-mode="true"] .missionTopline {
+  color: var(--gold);
+}
+
+.player[data-focus-mode="true"] .missionTopline strong,
+.player[data-focus-mode="true"] .prompt {
+  color: #fff1cf;
+}
+
+.player[data-focus-mode="true"] .progressTrack {
+  margin: 7px 0 8px;
+  background: rgb(255 241 207 / 14%);
+}
+
+.player[data-focus-mode="true"] .progressTrack i {
+  background: var(--gold);
+}
+
+.player[data-focus-mode="true"] .prompt {
+  font-size: 14px;
+}
+
+.player[data-focus-mode="true"] .feedback {
+  min-height: 0;
+  margin: 5px 0 7px;
+  color: rgb(255 241 207 / 68%);
+  font-size: 9px;
+}
+
+.player[data-focus-mode="true"] .missionFooter {
+  min-height: 24px;
+  padding-top: 7px;
+  color: rgb(255 241 207 / 52%);
+  border-color: rgb(255 241 207 / 15%);
+}
+
+.player[data-focus-mode="true"] .memoryCard {
+  position: absolute;
+  top: 150px;
+  right: clamp(12px, 2vw, 28px);
+  z-index: 8;
+  width: min(430px, calc(100% - 24px));
+  max-height: calc(100svh - 250px);
+  overflow-y: auto;
+  margin: 0;
+  color: var(--ink);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 38%);
+  transition: opacity 240ms ease, transform 240ms ease, visibility 240ms ease;
+}
+
+.player[data-focus-mode="true"] .stageShell:has([data-lens="true"]) + .memoryCard {
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(24px);
+}
+
+.player[data-focus-mode="true"] .memoryBody {
+  display: block;
+}
+
+.player[data-focus-mode="true"] .claimsList {
+  margin-top: 24px;
+}
+
+.player[data-focus-mode="true"] .playerFooter {
+  position: absolute;
+  right: 12px;
+  bottom: 7px;
+  z-index: 7;
+  padding: 4px 7px;
+  color: rgb(255 241 207 / 42%);
+  background: rgb(6 17 13 / 38%);
+  pointer-events: none;
+  backdrop-filter: blur(5px);
+}
+
+.player[data-focus-mode="true"] .playerFooter p {
+  display: none;
+}
+
+.player[data-focus-mode="true"] .exhibitProgress {
+  gap: 8px;
+}
+
+.player[data-focus-mode="true"] .exhibitProgress i {
+  width: 16px;
+  background: rgb(255 241 207 / 18%);
+}
+
+.player[data-focus-mode="true"] .exhibitProgress i[data-complete="true"] {
+  background: var(--gold);
+}
+
+@media (max-width: 760px) {
+  .player[data-focus-mode="true"] .playerHeader {
+    top: max(8px, env(safe-area-inset-top));
+    left: 8px;
+  }
+
+  .player[data-focus-mode="true"] .headerActions {
+    width: auto;
+  }
+
+  .player[data-focus-mode="true"] .resetButton {
+    display: none;
+  }
+
+  .player[data-focus-mode="true"][data-scene-count="multiple"] .sceneRail {
+    top: calc(max(8px, env(safe-area-inset-top)) + 50px);
+    left: 8px;
+    max-height: calc(100svh - 72px - env(safe-area-inset-top));
+  }
+
+  .player[data-focus-mode="true"] .spatialFrame > section > :first-child {
+    top: calc(max(8px, env(safe-area-inset-top)) + 48px);
+    right: 8px;
+    left: 8px;
+  }
+
+  .player[data-focus-mode="true"] .spatialFrame > section > :first-child > :last-child {
+    display: flex;
+    width: 100%;
+  }
+
+  .player[data-focus-mode="true"] .sceneHeading {
+    top: calc(max(8px, env(safe-area-inset-top)) + 102px);
+    right: 12px;
+    left: 12px;
+    display: block;
+  }
+
+  .player[data-focus-mode="true"] .sceneHeading h2 {
+    max-width: 15ch;
+    font-size: clamp(28px, 8.5vw, 38px);
+  }
+
+  .player[data-focus-mode="true"] .sceneTools {
+    margin-top: 10px;
+    justify-content: flex-start;
+  }
+
+  .player[data-focus-mode="true"] .interpretationBadge {
+    display: none;
+  }
+
+  .player[data-focus-mode="true"] .sourceButton {
+    min-height: 38px;
+  }
+
+  .player[data-focus-mode="true"] .missionCard {
+    right: 8px;
+    bottom: 90px;
+    left: 8px;
+    width: auto;
+    padding: 11px 12px 10px;
+  }
+
+  .player[data-focus-mode="true"] .spatialFrame > section > :nth-child(2) > nav {
+    right: 12px;
+    bottom: 164px;
+    left: 12px;
+  }
+
+  .player[data-focus-mode="true"] .prompt {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .player[data-focus-mode="true"] .memoryCard {
+    top: auto;
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    width: auto;
+    max-height: min(62svh, 560px);
+    border-radius: 12px 12px 0 0;
+  }
+}
+
+@media (max-width: 430px) {
+  .player[data-focus-mode="true"] .wordmark,
+  .player[data-focus-mode="true"] .backButton {
+    font-size: 12px;
+  }
+
+  .player[data-focus-mode="true"] .sceneHeading h2 {
+    max-width: calc(100vw - 24px);
+    overflow: hidden;
+    font-size: 23px;
+    line-height: 1.05;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .player[data-focus-mode="true"] .sceneEyebrow {
+    max-width: 28ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .player[data-focus-mode="true"] .focusExhibitTitle {
+    margin-bottom: 5px;
+  }
+
+  .player[data-focus-mode="true"] .sceneTools {
+    margin-top: 8px;
+  }
+
+  .player[data-focus-mode="true"] .missionFooter > span {
+    display: none;
   }
 }
 

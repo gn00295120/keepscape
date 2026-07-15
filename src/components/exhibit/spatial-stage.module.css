@@ -2,23 +2,24 @@
   position: relative;
   overflow: hidden;
   color: var(--cream);
-  border: 1px solid color-mix(in srgb, var(--cream) 22%, transparent);
-  border-radius: 5px;
-  background: #0c1a16;
-  box-shadow: 0 28px 70px rgb(4 12 9 / 36%);
+  border: 1px solid color-mix(in srgb, var(--cream) 16%, transparent);
+  border-radius: 2px;
+  background: #07130f;
+  box-shadow: 0 34px 90px rgb(4 12 9 / 44%);
 }
 
 .spatialHeader {
   position: relative;
   z-index: 20;
   display: flex;
-  min-height: 52px;
+  min-height: 54px;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 8px 12px;
-  border-bottom: 1px solid rgb(255 241 207 / 14%);
-  background: rgb(10 24 19 / 94%);
+  padding: 9px 14px;
+  border-bottom: 1px solid rgb(255 241 207 / 10%);
+  background: rgb(7 19 15 / 92%);
+  backdrop-filter: blur(16px);
 }
 
 .spatialChip {
@@ -91,16 +92,27 @@
 
 .viewport {
   position: relative;
-  min-height: min(62vh, 680px);
+  min-height: min(76vh, 790px);
   overflow: hidden;
   outline: none;
-  perspective: 1120px;
-  perspective-origin: 50% 43%;
+  perspective: 1260px;
+  perspective-origin: 50% 46%;
   touch-action: pan-y;
   background:
-    radial-gradient(circle at 50% 35%, rgb(217 232 189 / 13%), transparent 25%),
-    linear-gradient(180deg, #142821 0 56%, #09120f 100%);
+    radial-gradient(circle at 50% 38%, rgb(255 204 104 / 14%), transparent 24%),
+    radial-gradient(circle at 18% 28%, rgb(36 93 96 / 20%), transparent 32%),
+    linear-gradient(180deg, #10251f 0 54%, #050c0a 100%);
   isolation: isolate;
+}
+
+.viewport::before {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  content: "";
+  background: radial-gradient(circle at 50% 42%, rgb(8 19 15 / 10%), rgb(8 19 15 / 68%));
+  animation: portalOpen .88s cubic-bezier(.2, .78, .2, 1) forwards;
 }
 
 .viewport:focus-visible {
@@ -116,7 +128,37 @@
 
 .generatedWorld {
   z-index: -1;
-  transition: filter 260ms ease, opacity 260ms ease;
+  transition: filter 420ms ease, opacity 420ms ease;
+}
+
+.generatedWorld::before,
+.generatedWorld::after {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+}
+
+.generatedWorld::before {
+  background:
+    linear-gradient(90deg, rgb(2 9 7 / 72%), transparent 18% 82%, rgb(2 9 7 / 72%)),
+    linear-gradient(180deg, rgb(2 9 7 / 18%), transparent 52%, rgb(2 9 7 / 68%));
+}
+
+.portalPreview {
+  position: absolute;
+  inset: -5%;
+  opacity: .32;
+  background-position: center;
+  background-size: cover;
+  filter: blur(18px) saturate(.72) brightness(.58);
+  transform: scale(1.08);
+}
+
+.generatedWorld::after {
+  opacity: .15;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.78' numOctaves='3' stitchTiles='stitchTiles'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.32'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
 }
 
 .floorGrid,
@@ -126,9 +168,9 @@
   left: -8%;
   height: 78%;
   background:
-    linear-gradient(90deg, transparent 49.8%, rgb(242 187 90 / 25%) 50%, transparent 50.2%),
-    repeating-linear-gradient(90deg, rgb(255 241 207 / 11%) 0 1px, transparent 1px 10%),
-    repeating-linear-gradient(0deg, rgb(255 241 207 / 9%) 0 1px, transparent 1px 15%);
+    linear-gradient(90deg, transparent 49.8%, rgb(242 187 90 / 20%) 50%, transparent 50.2%),
+    repeating-linear-gradient(90deg, rgb(255 241 207 / 7%) 0 1px, transparent 1px 10%),
+    repeating-linear-gradient(0deg, rgb(255 241 207 / 6%) 0 1px, transparent 1px 15%);
 }
 
 .floorGrid {
@@ -148,90 +190,128 @@
   position: absolute;
   top: 28%;
   left: 50%;
-  width: 180px;
-  height: 180px;
+  width: 300px;
+  height: 300px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgb(242 187 90 / 24%), transparent 68%);
-  filter: blur(8px);
+  background: radial-gradient(circle, rgb(255 190 82 / 26%), transparent 68%);
+  filter: blur(18px);
   transform: translate(-50%, -50%);
 }
 
+.memoryHaze {
+  position: absolute;
+  right: -10%;
+  bottom: -17%;
+  left: -10%;
+  height: 48%;
+  opacity: .46;
+  background:
+    radial-gradient(ellipse at 20% 80%, rgb(68 123 96 / 25%), transparent 38%),
+    radial-gradient(ellipse at 72% 74%, rgb(210 151 62 / 20%), transparent 42%);
+  filter: blur(42px);
+  animation: hazeDrift 9s ease-in-out infinite alternate;
+}
+
+.memoryDust {
+  position: absolute;
+  inset: 0;
+  opacity: .3;
+  background-image:
+    radial-gradient(circle at 15% 72%, #ffd98b 0 1px, transparent 1.6px),
+    radial-gradient(circle at 35% 31%, #fff1cf 0 1px, transparent 1.5px),
+    radial-gradient(circle at 54% 68%, #ffd98b 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 72% 24%, #fff1cf 0 1px, transparent 1.6px),
+    radial-gradient(circle at 84% 62%, #ffd98b 0 1px, transparent 1.8px);
+  background-size: 230px 250px, 290px 320px, 310px 270px, 370px 330px, 410px 300px;
+  animation: dustFloat 16s linear infinite;
+}
+
 .viewport[data-lens="true"] .generatedWorld {
-  opacity: .5;
-  filter: grayscale(1) contrast(1.8);
+  opacity: .34;
+  filter: grayscale(1) contrast(1.35) brightness(.54);
 }
 
 .world {
   z-index: 2;
   pointer-events: none;
   transform: rotateY(var(--camera-yaw)) translateZ(var(--camera-depth));
-  transition: transform 850ms cubic-bezier(.2, .78, .2, 1);
+  transition: transform 980ms cubic-bezier(.16, .82, .2, 1);
 }
 
 .plane {
   position: absolute;
-  top: 48%;
+  top: 50%;
   left: 50%;
-  width: clamp(390px, 55%, 650px);
+  width: clamp(640px, 70vw, 1160px);
   aspect-ratio: var(--plane-aspect, 1.5);
   overflow: visible;
   margin: 0;
-  color: #14261f;
-  border: 8px solid #eee5d3;
-  border-bottom-width: 38px;
-  background: #eee5d3;
-  box-shadow: 0 30px 58px rgb(0 0 0 / 48%);
+  color: #fff1cf;
+  border: 1px solid rgb(255 241 207 / 16%);
+  border-radius: 18px;
+  background: #101c18;
+  box-shadow: 0 40px 90px rgb(0 0 0 / 58%);
   transform-style: preserve-3d;
-  transition: filter 300ms ease, opacity 300ms ease, transform 700ms cubic-bezier(.2, .78, .2, 1);
+  animation: planeArrive 1.15s cubic-bezier(.2, .78, .2, 1) both;
+  transition: filter 420ms ease, opacity 420ms ease, transform 850ms cubic-bezier(.2, .78, .2, 1),
+    translate 850ms cubic-bezier(.2, .78, .2, 1), scale 850ms cubic-bezier(.2, .78, .2, 1), box-shadow 420ms ease;
 }
 
 .plane[data-slot="near-left"] {
   z-index: 5;
-  transform: translate(-82%, -43%) translateZ(76px) rotateY(32deg) scale(.8);
+  transform: translate(-73%, -50%) translateZ(40px) rotateY(34deg) scale(.82);
   transform-origin: right center;
+  animation-delay: 180ms;
 }
 
 .plane[data-slot="mid-left"] {
   z-index: 4;
-  transform: translate(-72%, -50%) translateZ(-88px) rotateY(24deg) scale(.74);
+  transform: translate(-68%, -50%) translateZ(-80px) rotateY(25deg) scale(.77);
+  animation-delay: 110ms;
 }
 
 .plane[data-slot="far-center"] {
   z-index: 2;
-  transform: translate(-50%, -55%) translateZ(-285px) scale(.82);
+  transform: translate(-50%, -50%) translateZ(-310px) scale(1.08);
 }
 
 .plane[data-slot="mid-right"] {
   z-index: 4;
-  transform: translate(-28%, -50%) translateZ(-88px) rotateY(-24deg) scale(.74);
+  transform: translate(-32%, -50%) translateZ(-80px) rotateY(-25deg) scale(.77);
+  animation-delay: 110ms;
 }
 
 .plane[data-slot="near-right"] {
   z-index: 5;
-  transform: translate(-18%, -43%) translateZ(76px) rotateY(-32deg) scale(.8);
+  transform: translate(-27%, -50%) translateZ(40px) rotateY(-34deg) scale(.82);
   transform-origin: left center;
+  animation-delay: 180ms;
 }
 
 .world[data-lens="true"] .plane {
-  opacity: .52;
-  filter: saturate(.58) brightness(.72) contrast(1.12);
+  opacity: .16;
+  filter: grayscale(.82) saturate(.2) brightness(.55) contrast(1.15);
 }
 
 .world[data-lens="true"] .plane[data-active="true"] {
   z-index: 8;
-  opacity: 1;
-  filter: saturate(1.05) contrast(1.06);
+  opacity: .92;
+  filter: saturate(.82) brightness(.78) contrast(1.1);
+  translate: -15vw 0;
+  scale: 1.03;
+  box-shadow: 0 0 0 1px rgb(255 224 120 / 46%), 0 45px 110px rgb(0 0 0 / 68%);
 }
 
 .photoMount {
   position: absolute;
   inset: 0;
   overflow: hidden;
+  border-radius: inherit;
   background: #273b33;
 }
 
 .photoMount img {
-  object-fit: contain;
+  object-fit: cover;
 }
 
 .photoShade {
@@ -239,7 +319,9 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  background: linear-gradient(180deg, transparent 58%, rgb(5 11 9 / 34%));
+  background:
+    linear-gradient(90deg, rgb(5 11 9 / 20%), transparent 18% 82%, rgb(5 11 9 / 20%)),
+    linear-gradient(180deg, transparent 58%, rgb(5 11 9 / 45%));
 }
 
 .missingPhoto {
@@ -253,18 +335,24 @@
 
 .plane footer {
   position: absolute;
-  top: calc(100% + 8px);
-  right: 0;
-  left: 0;
+  right: 14px;
+  bottom: 12px;
+  left: 14px;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 8px;
+  z-index: 7;
+  padding: 7px 9px;
+  border: 1px solid rgb(255 241 207 / 16%);
+  border-radius: 2px;
+  background: rgb(5 14 11 / 72%);
+  backdrop-filter: blur(8px);
   font-family: "IBM Plex Mono", monospace;
 }
 
 .plane footer span {
-  color: #a95a3c;
+  color: #f2bb5a;
   font-size: 7px;
   letter-spacing: .08em;
   text-transform: uppercase;
@@ -272,6 +360,7 @@
 
 .plane footer strong {
   overflow: hidden;
+  color: rgb(255 241 207 / 70%);
   font-size: 7px;
   font-weight: 500;
   text-overflow: ellipsis;
@@ -401,7 +490,7 @@
 }
 
 .sceneCaption span,
-.lensReceipt span,
+.truthThread span,
 .dragHint {
   color: #f2bb5a;
   font: 600 8px/1.2 "IBM Plex Mono", monospace;
@@ -418,32 +507,335 @@
   line-height: 1.35;
 }
 
-.lensReceipt {
+.truthThread {
   position: absolute;
-  z-index: 12;
-  right: 18px;
-  bottom: 74px;
-  width: min(300px, calc(100% - 36px));
-  padding: 13px 14px;
+  z-index: 18;
+  top: 86px;
+  right: clamp(18px, 3vw, 46px);
+  width: min(430px, 36vw);
+  max-height: calc(100% - 120px);
+  overflow: hidden auto;
+  padding: 18px;
   color: #17261f;
-  border-top: 3px solid #f2bb5a;
-  background: #f6efdf;
-  box-shadow: 8px 8px 0 rgb(6 16 12 / 24%);
+  border: 1px solid rgb(255 224 120 / 58%);
+  border-top: 4px solid #f2bb5a;
+  border-radius: 3px;
+  background:
+    linear-gradient(135deg, rgb(255 251 239 / 98%), rgb(239 230 208 / 96%)),
+    #f6efdf;
+  box-shadow: 18px 24px 70px rgb(2 8 6 / 58%);
+  animation: truthThreadIn 520ms cubic-bezier(.2, .82, .2, 1) both;
+  pointer-events: auto;
+}
+
+.truthThreadHeader {
+  display: grid;
+  gap: 8px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgb(23 38 31 / 18%);
+}
+
+.truthThreadHeader span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #a34b32;
+}
+
+.truthThreadHeader small {
+  color: #667169;
+  font: 650 7px/1 "IBM Plex Mono", monospace;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.truthThreadHeader strong {
+  max-width: 13ch;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(22px, 2vw, 31px);
+  font-weight: 500;
+  line-height: .98;
+  letter-spacing: -.04em;
+}
+
+.sourcePortal {
+  margin: 14px 0 0;
+}
+
+.sourcePortalImage {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border: 1px solid rgb(23 38 31 / 28%);
+  background: #17261f;
+}
+
+.sourcePortalImage img {
+  object-fit: cover;
+}
+
+.sourcePortalRegion {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  min-width: 48px;
+  min-height: 42px;
+  place-items: start;
+  padding: 4px;
+  color: #17261f !important;
+  border: 3px solid #ffe078;
+  background: rgb(255 224 120 / 10%);
+  box-shadow: 0 0 0 999px rgb(3 11 8 / 48%), 0 0 28px rgb(255 224 120 / 72%);
+  font-size: 7px !important;
+  font-weight: 750 !important;
+  letter-spacing: .06em !important;
+  line-height: 1 !important;
+  text-transform: uppercase;
+}
+
+.sourcePortalRegion::before {
+  position: absolute;
+  bottom: 100%;
+  left: -3px;
+  padding: 4px 6px;
+  color: #17261f;
+  background: #ffe078;
+  content: "MATCHED";
+  font: 750 7px/1 "IBM Plex Mono", monospace;
+  letter-spacing: .08em;
+}
+
+.sourcePortal figcaption {
+  display: grid;
+  gap: 3px;
+  padding: 9px 10px;
+  border: 1px solid rgb(23 38 31 / 20%);
+  border-top: 0;
+  background: rgb(255 255 255 / 45%);
+}
+
+.sourcePortal figcaption span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #a34b32;
+  font-size: 7px;
+}
+
+.sourcePortal figcaption strong {
+  overflow: hidden;
+  font: 600 10px/1.3 "IBM Plex Mono", monospace;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.emptyPortal {
+  display: grid;
+  min-height: 185px;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  margin-top: 14px;
+  color: #6b7068;
+  border: 1px dashed rgb(23 38 31 / 30%);
+  background: rgb(255 255 255 / 28%);
+}
+
+.emptyPortal strong {
+  color: #17261f;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 17px;
+}
+
+.emptyPortal span {
+  color: #6b7068;
+  font-size: 8px;
+}
+
+.evidenceChain {
+  display: grid;
+  gap: 0;
+  margin-top: 13px;
+  border-top: 1px solid rgb(23 38 31 / 18%);
+}
+
+.evidenceChain > div {
+  position: relative;
+  display: grid;
+  min-height: 48px;
+  align-items: center;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  gap: 8px;
+  border-bottom: 1px solid rgb(23 38 31 / 14%);
+  opacity: .48;
+}
+
+.evidenceChain > div[data-present="true"] {
+  opacity: 1;
+}
+
+.evidenceChain > div > span {
+  display: grid;
+  width: 23px;
+  height: 23px;
+  place-items: center;
+  color: #17261f;
+  border: 1px solid rgb(23 38 31 / 26%);
+  border-radius: 50%;
+  font-size: 7px;
+}
+
+.evidenceChain > div[data-present="true"] > span {
+  color: #fff7e6;
+  border-color: #356353;
+  background: #356353;
+}
+
+.evidenceChain p {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.evidenceChain small {
+  color: #73766e;
+  font: 600 9px/1.1 "IBM Plex Mono", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.evidenceChain strong {
+  font: 650 11px/1.25 "IBM Plex Sans Variable", sans-serif;
+}
+
+.waveform {
+  display: flex;
+  width: 68px;
+  height: 22px;
+  align-items: center;
+  gap: 3px;
+}
+
+.waveform b {
+  width: 2px;
+  height: 30%;
+  background: #b75a3e;
+}
+
+.waveform b:nth-child(3n + 1) {
+  height: 78%;
+}
+
+.waveform b:nth-child(3n + 2) {
+  height: 48%;
+}
+
+.truthBoundary {
+  margin: 13px 0 0;
+  padding: 10px 11px;
+  color: #5c6259;
+  border-left: 3px solid #f2bb5a;
+  background: rgb(242 187 90 / 12%);
+  font: 600 9px/1.45 "IBM Plex Mono", monospace;
+  letter-spacing: .025em;
+  text-transform: uppercase;
+}
+
+.openArchiveButton {
+  display: flex;
+  width: 100%;
+  min-height: 39px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding: 0 12px;
+  cursor: pointer;
+  color: #fff7e6;
+  border: 0;
+  background: #17261f;
+  font: 700 8px/1 "IBM Plex Mono", monospace;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.openArchiveButton:hover,
+.openArchiveButton:focus-visible {
+  color: #17261f;
+  background: #f2bb5a;
+}
+
+.truthThreadLine {
+  position: absolute;
+  inset: 0;
+  z-index: 14;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
   pointer-events: none;
 }
 
-.lensReceipt strong {
-  display: block;
-  margin-top: 6px;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 15px;
+.truthThreadLine path {
+  fill: none;
+  stroke: #ffe078;
+  stroke-dasharray: 1.4 1.2;
+  stroke-width: .22;
+  vector-effect: non-scaling-stroke;
+  animation: threadTravel 1.1s linear infinite;
 }
 
-.lensReceipt p {
-  margin: 7px 0 0;
-  color: #5c6259;
-  font: 500 8px/1.45 "IBM Plex Mono", monospace;
+.truthThreadLine circle {
+  fill: #ffe078;
+  filter: drop-shadow(0 0 4px #ffe078);
+}
+
+.completionBloom {
+  position: absolute;
+  z-index: 17;
+  bottom: 42px;
+  left: 50%;
+  display: grid;
+  width: min(540px, calc(100% - 48px));
+  gap: 7px;
+  padding: 17px 22px;
+  color: #fff1cf;
+  border: 1px solid rgb(255 224 120 / 52%);
+  border-top: 3px solid #ffe078;
+  background: rgb(7 22 17 / 88%);
+  box-shadow: 0 0 80px rgb(255 190 82 / 30%);
+  backdrop-filter: blur(14px);
+  transform: translateX(-50%);
+  animation: bloomReceipt 720ms cubic-bezier(.18, .9, .2, 1) both;
+  pointer-events: none;
+  text-align: center;
+}
+
+.completionBloom span {
+  color: #ffe078;
+  font: 700 8px/1.2 "IBM Plex Mono", monospace;
+  letter-spacing: .14em;
   text-transform: uppercase;
+}
+
+.completionBloom strong {
+  display: block;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(17px, 2vw, 26px);
+  font-weight: 500;
+}
+
+.viewport[data-complete="true"] .vanishingLight {
+  background: radial-gradient(circle, rgb(255 214 116 / 60%), transparent 70%);
+  animation: worldAwaken 1.2s ease-out both;
+}
+
+.viewport[data-complete="true"] .plane {
+  filter: saturate(1.2) brightness(1.08);
+  box-shadow: 0 30px 100px rgb(255 185 72 / 20%), 0 40px 90px rgb(0 0 0 / 58%);
+}
+
+.viewport[data-complete="true"] .memoryDust {
+  opacity: .8;
+  animation-duration: 8s;
 }
 
 .cameraControls {
@@ -541,6 +933,97 @@
   text-transform: uppercase;
 }
 
+@keyframes portalOpen {
+  0% {
+    opacity: .9;
+  }
+
+  38% {
+    opacity: .54;
+  }
+
+  100% {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+@keyframes planeArrive {
+  from {
+    opacity: 0;
+    filter: blur(22px) saturate(.45);
+    scale: .76;
+    translate: 0 70px;
+  }
+
+  to {
+    opacity: 1;
+    filter: none;
+    scale: 1;
+    translate: 0 0;
+  }
+}
+
+@keyframes truthThreadIn {
+  from {
+    opacity: 0;
+    transform: translateX(48px) scale(.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes threadTravel {
+  to {
+    stroke-dashoffset: -5.2;
+  }
+}
+
+@keyframes bloomReceipt {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 36px) scale(.92);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes worldAwaken {
+  0% {
+    opacity: .24;
+    scale: .5;
+  }
+
+  45% {
+    opacity: 1;
+    scale: 1.55;
+  }
+
+  100% {
+    opacity: .72;
+    scale: 1;
+  }
+}
+
+@keyframes hazeDrift {
+  to {
+    opacity: .72;
+    transform: translate3d(3%, -3%, 0) scale(1.08);
+  }
+}
+
+@keyframes dustFloat {
+  to {
+    background-position: 40px -120px, -70px -180px, 90px -150px, -30px -200px, 60px -170px;
+  }
+}
+
 @media (max-width: 760px) {
   .spatialHeader {
     align-items: flex-start;
@@ -562,7 +1045,7 @@
 
   .plane {
     top: 46%;
-    width: min(78%, 480px);
+    width: min(112vw, 590px);
   }
 
   .plane[data-slot="near-left"] {
@@ -591,9 +1074,80 @@
     -webkit-line-clamp: 3;
   }
 
-  .lensReceipt {
-    right: 12px;
-    bottom: 70px;
+  .truthThread {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    max-height: 54svh;
+    padding: 14px;
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: 0;
+  }
+
+  .truthThreadHeader {
+    grid-template-columns: auto 1fr;
+    align-items: center;
+  }
+
+  .truthThreadHeader strong {
+    grid-column: 2;
+    grid-row: 1;
+    max-width: none;
+    font-size: 20px;
+    text-align: right;
+  }
+
+  .truthThreadHeader small {
+    display: none;
+  }
+
+  .sourcePortal {
+    display: grid;
+    grid-template-columns: 1.05fr .95fr;
+  }
+
+  .sourcePortal figcaption {
+    align-content: end;
+    border-top: 1px solid rgb(23 38 31 / 20%);
+    border-left: 0;
+  }
+
+  .evidenceChain {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .evidenceChain > div {
+    min-height: 58px;
+    grid-template-columns: 23px 1fr;
+    padding: 6px;
+    border-right: 1px solid rgb(23 38 31 / 14%);
+  }
+
+  .waveform {
+    display: none;
+  }
+
+  .truthBoundary {
+    display: block;
+    margin-top: 8px;
+    padding: 7px 8px;
+    font-size: 8px;
+  }
+
+  .truthThreadLine {
+    display: none;
+  }
+
+  .world[data-lens="true"] .plane[data-active="true"] {
+    translate: 0 -16vh;
+    scale: .84;
+  }
+
+  .completionBloom {
+    bottom: 76px;
   }
 
   .dragHint {
@@ -675,7 +1229,7 @@
   }
 
   .plane {
-    width: 88%;
+    width: 126vw;
   }
 
   .plane[data-slot="near-left"] {
@@ -686,8 +1240,8 @@
     transform: translate(-30%, -35%) translateZ(4px) rotateY(-23deg) scale(.66);
   }
 
-  .lensReceipt {
-    width: calc(100% - 24px);
+  .truthThread {
+    max-height: 54svh;
   }
 
   .dragHint {
@@ -696,8 +1250,22 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .world,
+  .viewport::before,
   .plane,
+  .memoryHaze,
+  .memoryDust,
+  .truthThread,
+  .truthThreadLine path,
+  .completionBloom,
+  .viewport[data-complete="true"] .vanishingLight {
+    animation: none !important;
+  }
+
+  .viewport::before {
+    display: none;
+  }
+
+  .world,
   .generatedWorld,
   .anchor > span,
   .headerActions button,

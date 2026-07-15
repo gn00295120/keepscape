@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import {
+  useEffect,
+  useId,
   useMemo,
   useRef,
   useState,
@@ -337,14 +339,23 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
   const [sceneIndex, setSceneIndex] = useState(0);
   const [progress, setProgress] = useState<Record<string, SceneProgress>>(() => createProgress(manifest));
   const [selectedHotspotId, setSelectedHotspotId] = useState<string | null>(null);
+  const [detailOpen, setDetailOpen] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [flatView, setFlatView] = useState(false);
+  const [evidenceLensActive, setEvidenceLensActive] = useState(false);
+  const [sceneRailOpen, setSceneRailOpen] = useState(false);
   const [feedback, setFeedback] = useState("Choose a glowing memory marker to begin.");
   const drawerReturnFocusRef = useRef<HTMLElement | null>(null);
+  const detailAutoCloseRef = useRef<number | null>(null);
+  const sceneRailToggleRef = useRef<HTMLButtonElement>(null);
+  const sceneNavId = useId();
 
   const scene = manifest.scenes[sceneIndex] ?? manifest.scenes[0];
   const sceneProgress = progress[scene.id] ?? EMPTY_PROGRESS;
   const selectedHotspot = scene.hotspots.find((hotspot) => hotspot.id === selectedHotspotId) ?? null;
+  const focusMode = Boolean(scene.spatial && !flatView);
+  const hasMultipleScenes = manifest.scenes.length > 1;
+  const sceneRailCollapsed = focusMode && hasMultipleScenes && !sceneRailOpen;
 
   const sourceMap = useMemo(
     () => new Map(manifest.sources.map((source) => [source.id, source])),
@@ -376,16 +387,46 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
     ? sceneProgress.collectedIds.length
     : sceneProgress.sequenceIndex;
 
+  const clearDetailAutoClose = () => {
+    if (detailAutoCloseRef.current === null) return;
+    window.clearTimeout(detailAutoCloseRef.current);
+    detailAutoCloseRef.current = null;
+  };
+
+  const closeDetail = () => {
+    clearDetailAutoClose();
+    setDetailOpen(false);
+  };
+
+  const scheduleDetailAutoClose = () => {
+    clearDetailAutoClose();
+    detailAutoCloseRef.current = window.setTimeout(() => {
+      detailAutoCloseRef.current = null;
+      setDetailOpen(false);
+    }, 650);
+  };
+
+  useEffect(() => () => {
+    if (detailAutoCloseRef.current !== null) {
+      window.clearTimeout(detailAutoCloseRef.current);
+    }
+  }, []);
+
   const goToScene = (nextIndex: number) => {
+    clearDetailAutoClose();
     const safeIndex = Math.max(0, Math.min(nextIndex, manifest.scenes.length - 1));
     setSceneIndex(safeIndex);
     setSelectedHotspotId(null);
+    setDetailOpen(false);
     setDrawerOpen(false);
     setFlatView(false);
+    setEvidenceLensActive(false);
+    setSceneRailOpen(false);
     setFeedback("Choose a glowing memory marker to begin.");
   };
 
   const openSourceDrawer = () => {
+    clearDetailAutoClose();
     if (document.activeElement instanceof HTMLElement) {
       drawerReturnFocusRef.current = document.activeElement;
     }
@@ -399,7 +440,9 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
   };
 
   const handleHotspot = (hotspot: Hotspot) => {
+    clearDetailAutoClose();
     setSelectedHotspotId(hotspot.id);
+    setDetailOpen(true);
 
     if (sceneProgress.complete) {
       setFeedback("This scene is complete. You can still inspect every memory and source.");
@@ -423,6 +466,7 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
         ...current,
         [scene.id]: { ...sceneProgress, collectedIds, complete },
       }));
+      if (complete) scheduleDetailAutoClose();
       setFeedback(complete ? scene.interaction.completionMessage : `${hotspot.shortLabel} collected — ${collectedIds.length} of ${interactionTotal}.`);
       return;
     }
@@ -443,15 +487,20 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
       ...current,
       [scene.id]: { ...sceneProgress, sequenceIndex, complete },
     }));
+    if (complete) scheduleDetailAutoClose();
     setFeedback(complete ? scene.interaction.successMessage : `${hotspot.shortLabel} is right. Now find step ${sequenceIndex + 1}.`);
   };
 
   const resetExhibit = () => {
+    clearDetailAutoClose();
     setProgress(createProgress(manifest));
     setSceneIndex(0);
     setSelectedHotspotId(null);
+    setDetailOpen(false);
     setDrawerOpen(false);
     setFlatView(false);
+    setEvidenceLensActive(false);
+    setSceneRailOpen(false);
     setFeedback("The exhibit has been reset. Choose a glowing memory marker to begin.");
   };
 
@@ -476,14 +525,21 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
     <section
       className={styles.player}
       style={theme}
+      data-focus-mode={focusMode}
+      data-memory-active={interactionDone > 0}
+      data-scene-count={hasMultipleScenes ? "multiple" : "single"}
       aria-label={`${manifest.title} playable exhibit`}
       onKeyDown={(event) => {
         if (event.key === "Escape") {
           if (drawerOpen) {
             event.preventDefault();
             closeSourceDrawer();
+          } else if (focusMode && sceneRailOpen) {
+            event.preventDefault();
+            setSceneRailOpen(false);
+            window.requestAnimationFrame(() => sceneRailToggleRef.current?.focus());
           } else {
-            setSelectedHotspotId(null);
+            closeDetail();
           }
         }
       }}
@@ -510,13 +566,33 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
       </header>
 
       <div className={styles.exhibitGrid}>
-        <aside className={styles.sceneRail} aria-label="Exhibit scenes">
+        <aside
+          className={styles.sceneRail}
+          data-collapsed={sceneRailCollapsed}
+          aria-label="Exhibit scenes"
+        >
+          {focusMode && hasMultipleScenes ? (
+            <button
+              ref={sceneRailToggleRef}
+              className={styles.sceneRailToggle}
+              type="button"
+              aria-controls={sceneNavId}
+              aria-expanded={sceneRailOpen}
+              aria-label={sceneRailOpen
+                ? "Close scene switcher"
+                : `Open scene switcher, scene ${sceneIndex + 1} of ${manifest.scenes.length}`}
+              onClick={() => setSceneRailOpen((current) => !current)}
+            >
+              <MiniIcon name={sceneRailOpen ? "close" : "archive"} />
+              <span>{sceneRailOpen ? "Close scenes" : `Scenes ${sceneIndex + 1}/${manifest.scenes.length}`}</span>
+            </button>
+          ) : null}
           <div className={styles.railIntro}>
             <p className={styles.archiveKicker}>Playable archive</p>
             <h1>{manifest.title}</h1>
             <p>{manifest.subtitle}</p>
           </div>
-          <nav className={styles.sceneNav}>
+          <nav className={styles.sceneNav} id={sceneNavId}>
             {manifest.scenes.map((item, index) => {
               const complete = progress[item.id]?.complete ?? false;
               return (
@@ -526,7 +602,12 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
                   className={styles.sceneTab}
                   data-active={index === sceneIndex}
                   data-complete={complete}
-                  onClick={() => goToScene(index)}
+                  onClick={() => {
+                    goToScene(index);
+                    if (item.spatial) {
+                      window.requestAnimationFrame(() => sceneRailToggleRef.current?.focus());
+                    }
+                  }}
                   aria-current={index === sceneIndex ? "step" : undefined}
                 >
                   <span className={styles.sceneNumber}>{complete ? <MiniIcon name="check" /> : String(index + 1).padStart(2, "0")}</span>
@@ -542,8 +623,13 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
         </aside>
 
         <main className={styles.scenePanel}>
-          <div className={styles.sceneHeading}>
+          <div
+            className={styles.sceneHeading}
+            aria-hidden={focusMode && interactionDone > 0 ? true : undefined}
+            inert={focusMode && interactionDone > 0 ? true : undefined}
+          >
             <div>
+              {focusMode ? <h1 className={styles.focusExhibitTitle}>{manifest.title}</h1> : null}
               <p className={styles.sceneEyebrow}>{scene.eyebrow} · scene {sceneIndex + 1}/{manifest.scenes.length}</p>
               <h2>{scene.title}</h2>
             </div>
@@ -564,14 +650,26 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
 
           <div className={styles.stageShell}>
             {scene.spatial && !flatView ? (
-              <SpatialStage
-                scene={scene}
-                sources={manifest.sources}
-                selectedHotspotId={selectedHotspotId}
-                hotspotStates={Object.fromEntries(scene.hotspots.map((hotspot) => [hotspot.id, hotspotState(hotspot)]))}
-                onHotspot={handleHotspot}
-                onRequestFlat={() => setFlatView(true)}
-              />
+              <div className={styles.spatialFrame}>
+                <SpatialStage
+                  key={scene.id}
+                  scene={scene}
+                  claims={manifest.claims}
+                  sources={manifest.sources}
+                  selectedHotspotId={selectedHotspotId}
+                  hotspotStates={Object.fromEntries(scene.hotspots.map((hotspot) => [hotspot.id, hotspotState(hotspot)]))}
+                  lensActive={evidenceLensActive}
+                  onLensChange={setEvidenceLensActive}
+                  onHotspot={handleHotspot}
+                  onOpenSources={openSourceDrawer}
+                  onRequestFlat={() => {
+                    closeDetail();
+                    setFlatView(true);
+                    setEvidenceLensActive(false);
+                    setSceneRailOpen(false);
+                  }}
+                />
+              </div>
             ) : (
               <div
                 className={styles.stage}
@@ -613,7 +711,12 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
               </div>
             )}
 
-            <section className={styles.missionCard} aria-label="Scene activity">
+            <section
+              className={styles.missionCard}
+              aria-label="Scene activity"
+              aria-hidden={sceneProgress.complete || (focusMode && evidenceLensActive) ? true : undefined}
+              inert={sceneProgress.complete || (focusMode && evidenceLensActive) ? true : undefined}
+            >
               <div className={styles.missionTopline}>
                 <span>{scene.interaction.kind === "collect" ? "Keepsake trail" : "Put the memory in order"}</span>
                 <strong>{Math.min(interactionDone, interactionTotal)}/{interactionTotal}</strong>
@@ -630,11 +733,22 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
                 ) : null}
               </div>
             </section>
+
+            {sceneProgress.complete && (!scene.spatial || flatView) ? (
+              <div className={styles.flatCompletionBloom} role="status">
+                <span>{interactionTotal}/{interactionTotal} · archive awakened</span>
+                <strong>
+                  {scene.interaction.kind === "sequence"
+                    ? scene.interaction.successMessage
+                    : scene.interaction.completionMessage}
+                </strong>
+              </div>
+            ) : null}
           </div>
 
-          {selectedHotspot ? (
+          {selectedHotspot && detailOpen ? (
             <article className={styles.memoryCard}>
-              <button className={styles.memoryClose} type="button" onClick={() => setSelectedHotspotId(null)} aria-label="Close memory detail">
+              <button className={styles.memoryClose} type="button" onClick={closeDetail} aria-label="Close memory detail">
                 <MiniIcon name="close" />
               </button>
               <div className={styles.memoryIndex}>

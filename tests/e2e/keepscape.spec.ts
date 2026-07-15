@@ -41,7 +41,7 @@ async function enterExhibit(
 
   const launch = page.getByRole("button", { name: `Approve final interaction & enter ${title}` });
   await expect(launch).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText(/Runtime fallback/)).toBeVisible();
+  await expect(page.getByText("Codex · fallback", { exact: true })).toBeVisible();
   if (hasUncertainty && uncertaintyDecision === "confirm") {
     await expect(page.getByText("Storyteller confirmation", { exact: true })).toBeVisible();
   }
@@ -59,7 +59,9 @@ test("collect exhibit preserves an inspectable evidence trail", async ({ page })
     name: "Generated spatial interpretation: Three photographs remembered one night",
   });
   await expect(spatial).toBeVisible();
-  await expect(spatial.getByText("Generated space · traceable story", { exact: true })).toBeVisible();
+  // Focus mode intentionally hides this redundant chip while keeping the
+  // generated-space boundary available in the DOM and accessibility tree.
+  await expect(spatial.getByText("Generated space · traceable story", { exact: true })).toHaveCount(1);
   await expect(spatial.getByText("Source plane", { exact: true })).toHaveCount(3);
   const spatialWorld = spatial.locator("[data-preset]").first();
   const nearPlane = spatial.locator('article[data-slot="near-left"]');
@@ -82,6 +84,11 @@ test("collect exhibit preserves an inspectable evidence trail", async ({ page })
     uncertaintyDrawer.getByText(/deliberately kept uncertain.*not confirmed as fact/i),
   ).toBeVisible();
   await uncertaintyDrawer.getByRole("button", { name: "Close source archive" }).click();
+  await spatial.getByRole("button", { name: "Turn on Evidence Lens", exact: true }).click();
+  const uncertaintyThread = spatial.getByLabel("Evidence Lens truth thread");
+  await expect(uncertaintyThread.getByText("Kept uncertain · not confirmed as fact", { exact: true })).toBeVisible();
+  await expect(uncertaintyThread.getByText("The cited audio supports this detail.", { exact: false })).toBeVisible();
+  await spatial.getByRole("button", { name: "Evidence Lens on", exact: true }).click();
   await page.getByRole("button", { name: "Close memory detail" }).click();
 
   await spatial.getByRole("button", { name: "View flat exhibit" }).click();
@@ -96,9 +103,12 @@ test("collect exhibit preserves an inspectable evidence trail", async ({ page })
 
   await spatial.getByRole("button", { name: "Painted", exact: true }).click();
   await spatial.getByRole("button", { name: "Turn on Evidence Lens", exact: true }).click();
-  await expect(spatial.getByText("Evidence Lens active", { exact: true })).toBeVisible();
+  await expect(spatial.getByRole("button", { name: "Evidence Lens on", exact: true })).toBeVisible();
   await expect(spatial.getByText("cited photo region", { exact: true })).toBeVisible();
-  const traceButton = page.getByRole("button", { name: "Trace to 3 sources" });
+  await expect(
+    spatial.getByText("Confirmed · The source envelope is marked August 1998.", { exact: true }),
+  ).toBeVisible();
+  const traceButton = spatial.getByRole("button", { name: "Open full source archive" });
   await traceButton.click();
 
   const drawer = page.getByRole("dialog", { name: "Source archive" });
@@ -110,13 +120,33 @@ test("collect exhibit preserves an inspectable evidence trail", async ({ page })
   await drawer.getByRole("button", { name: "Close source archive" }).click();
   await expect(traceButton).toBeFocused();
 
+  await spatial.getByRole("button", { name: "Evidence Lens on", exact: true }).click();
   await page.getByRole("button", { name: "Close memory detail" }).click();
   await spatial.getByRole("button", { name: "Tasseled", exact: true }).click();
   await page.getByRole("button", { name: "Close memory detail" }).click();
   await spatial.getByRole("button", { name: "Pale", exact: true }).click();
 
-  await expect(page.getByText("Archive trail complete", { exact: true })).toBeVisible();
-  await expect(page.getByText("Three lights, three citations", { exact: false })).toBeVisible();
+  await expect(page.getByText(/3\/3\s*·\s*archive awakened/i)).toBeVisible();
+  await expect(page.getByText("Three lights, three citations.", { exact: true })).toBeVisible();
+
+  // A new inspection within the completion window supersedes the pending
+  // auto-close instead of letting an old timer dismiss the new object.
+  await spatial.getByRole("button", { name: "Painted", exact: true }).click();
+  await page.waitForTimeout(800);
+  await expect(page.getByRole("heading", { name: "The painted lantern", exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Close memory detail" }).click();
+  await spatial.getByRole("button", { name: "Pale", exact: true }).click();
+
+  // Completion closes the detail card after 650ms, but must not discard the
+  // selected object's evidence while its source drawer is already open.
+  await page.getByRole("button", { name: "Trace to 2 sources" }).click();
+  const completedDrawer = page.getByRole("dialog", { name: "Source archive" });
+  await page.waitForTimeout(800);
+  await expect(completedDrawer.locator("article")).toHaveCount(2);
+  await expect(
+    completedDrawer.getByText("AI-generated fictional demo photo · right view", { exact: true }),
+  ).toBeVisible();
+  await completedDrawer.getByRole("button", { name: "Close source archive" }).click();
   await expectCleanPage(page, browserErrors);
 });
 
@@ -147,8 +177,10 @@ test("sequence exhibit rejects a wrong order and completes the true order", asyn
     }
   }
 
-  await expect(page.getByText("Archive trail complete", { exact: true })).toBeVisible();
-  await expect(page.getByText("The wheel turns clean", { exact: false })).toBeVisible();
+  await expect(page.getByText(/4\/4\s*·\s*archive awakened/i)).toBeVisible();
+  await expect(
+    page.getByRole("status").getByText("The wheel turns clean", { exact: false }),
+  ).toBeVisible();
   await expectCleanPage(page, browserErrors);
 });
 
