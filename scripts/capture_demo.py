@@ -17,8 +17,13 @@ if not re.fullmatch(r"[0-9a-fA-F]{7,40}", DEMO_SHA):
     raise RuntimeError("DEMO_SHA is required and must be a 7-40 character Git commit SHA.")
 
 REPO_ROOT = "https://github.com/gn00295120/keepscape"
-REPO_URL = f"{REPO_ROOT}/tree/{DEMO_SHA}"
-RECEIPT_URL = f"{REPO_ROOT}/blob/{DEMO_SHA}/docs/evidence/codex-live-run.json?plain=1"
+RECEIPT_SHA = os.environ.get(
+    "DEMO_RECEIPT_SHA",
+    "f03dc2220ca304f2a8340b368ba1e3b166eb22ab",
+).strip()
+if not re.fullmatch(r"[0-9a-fA-F]{7,40}", RECEIPT_SHA):
+    raise RuntimeError("DEMO_RECEIPT_SHA must be a 7-40 character Git commit SHA.")
+RECEIPT_URL = f"{REPO_ROOT}/blob/{RECEIPT_SHA}/docs/evidence/codex-live-run.json?plain=1"
 BUILD_ID = os.environ.get("DEMO_BUILD", "").strip() or DEMO_SHA[:12]
 CAPTURE_WIDTH = 1920
 CAPTURE_HEIGHT = 1080
@@ -306,32 +311,37 @@ def show_transformation_intro(page: Page) -> None:
           intro.id = 'keepscape-transformation-intro';
           intro.innerHTML = `
             <div class="demo-intro-copy">
-              <small>KEEPSCAPE · A TRACEABLE STORY</small>
-              <h1>Three photos.<br>One voice.</h1>
-              <p>Becomes a place you can walk into.</p>
+              <small>KEEPSCAPE · SOURCE MATERIAL</small>
+              <h1>Three photos.<br>One remembered story.</h1>
+              <p>Then the archive opens.</p>
             </div>
             <div class="demo-intro-photos">
-              ${sources.map((src, index) => `<figure style="--i:${index}"><img src="${src}" alt=""><span>Source 0${index + 1}</span></figure>`).join('')}
-            </div>`;
+              ${sources.map((src, index) => `<figure style="--i:${index}"><img src="${src}" alt=""><span>Fictional demo source 0${index + 1}</span></figure>`).join('')}
+            </div>
+            <div class="demo-intro-disclosure">BUILT-IN DEMO · AI-GENERATED FICTIONAL PHOTOS · SYNTHETIC NARRATION</div>`;
           Object.assign(intro.style, {
             position:'fixed', inset:'0', zIndex:'2147483646', display:'grid',
             gridTemplateColumns:'0.72fr 1.28fr', alignItems:'center', gap:'56px', padding:'72px 86px',
             color:'#f7efdf', background:'radial-gradient(circle at 76% 42%, #29453a 0, #17231e 52%, #101a16 100%)',
-            fontFamily:'Arial, sans-serif', opacity:'1', transform:'scale(1)',
+            fontFamily:'"IBM Plex Sans Variable", "Avenir Next", sans-serif', opacity:'1', transform:'scale(1)',
             transition:'opacity 700ms ease, transform 900ms cubic-bezier(.2,.78,.2,1)'
           });
           const style = document.createElement('style');
           style.textContent = `
             #keepscape-transformation-intro small { color:#f2bb5a; font:700 14px/1.2 monospace; letter-spacing:.18em; }
             #keepscape-transformation-intro h1 { margin:22px 0 18px; font:750 78px/.92 Georgia,serif; letter-spacing:-.055em; }
-            #keepscape-transformation-intro p { margin:0; max-width:24ch; color:#dfe8d6; font:500 24px/1.35 Arial,sans-serif; }
+            #keepscape-transformation-intro p { margin:0; max-width:24ch; color:#dfe8d6; font:500 24px/1.35 "IBM Plex Sans Variable","Avenir Next",sans-serif; }
             #keepscape-transformation-intro .demo-intro-photos { position:relative; height:610px; perspective:1100px; }
-            #keepscape-transformation-intro figure { position:absolute; top:50%; left:50%; width:520px; margin:0; padding:12px 12px 42px; background:#f5eddd; box-shadow:0 32px 64px rgba(0,0,0,.45); transform:translate(calc(-50% + (var(--i) - 1) * 205px),-50%) rotateY(calc((1 - var(--i)) * 19deg)) translateZ(calc((1 - abs(var(--i) - 1)) * 70px)); }
+            #keepscape-transformation-intro .demo-intro-copy { animation:demoCopyReveal 720ms cubic-bezier(.2,.78,.2,1) both; }
+            #keepscape-transformation-intro figure { position:absolute; top:50%; left:50%; width:520px; margin:0; padding:12px 12px 42px; background:#f5eddd; box-shadow:0 32px 64px rgba(0,0,0,.45); transform:translate(calc(-50% + (var(--i) - 1) * 205px),-50%) rotateY(calc((1 - var(--i)) * 19deg)) translateZ(calc((1 - abs(var(--i) - 1)) * 70px)); animation:demoPhotoReveal 760ms cubic-bezier(.2,.78,.2,1) both; animation-delay:calc(180ms + var(--i) * 140ms); }
             #keepscape-transformation-intro figure:nth-child(1) { transform:translate(-88%,-50%) rotateY(20deg) scale(.86); }
             #keepscape-transformation-intro figure:nth-child(2) { z-index:2; transform:translate(-50%,-50%) translateZ(70px); }
             #keepscape-transformation-intro figure:nth-child(3) { transform:translate(-12%,-50%) rotateY(-20deg) scale(.86); }
             #keepscape-transformation-intro img { display:block; width:100%; aspect-ratio:3/2; object-fit:cover; }
             #keepscape-transformation-intro figure span { position:absolute; bottom:14px; left:15px; color:#27372f; font:700 11px/1 monospace; letter-spacing:.12em; text-transform:uppercase; }
+            #keepscape-transformation-intro .demo-intro-disclosure { position:absolute; left:86px; bottom:34px; color:#aebfb4; font:650 11px/1.3 "IBM Plex Mono",monospace; letter-spacing:.11em; }
+            @keyframes demoCopyReveal { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+            @keyframes demoPhotoReveal { from { opacity:0; filter:blur(9px); } to { opacity:1; filter:blur(0); } }
           `;
           intro.appendChild(style);
           document.body.appendChild(intro);
@@ -357,13 +367,73 @@ def reveal_exhibit_from_intro(page: Page) -> None:
     pause(page, 1.0)
 
 
+def show_cinematic_beat(
+    page: Page,
+    kicker: str,
+    headline: str,
+    *,
+    side: str = "left",
+    duration: float = 1.7,
+) -> None:
+    if side not in {"left", "right"}:
+        raise ValueError(f"Unsupported cinematic beat side: {side}")
+    page.evaluate(
+        """({ kicker, headline, side, duration }) => {
+          document.getElementById('keepscape-cinematic-beat')?.remove();
+          const beat = document.createElement('aside');
+          beat.id = 'keepscape-cinematic-beat';
+          beat.setAttribute('aria-hidden', 'true');
+          const rule = document.createElement('i');
+          const copy = document.createElement('div');
+          const eyebrow = document.createElement('small');
+          const title = document.createElement('strong');
+          eyebrow.textContent = kicker;
+          title.textContent = headline;
+          copy.append(eyebrow, title);
+          beat.append(rule, copy);
+          Object.assign(beat.style, {
+            position: 'fixed', zIndex: '2147483645', bottom: '82px',
+            display: 'grid', gridTemplateColumns: '5px minmax(0, 1fr)', gap: '18px',
+            width: 'min(610px, 42vw)', padding: '20px 24px 21px 0',
+            color: '#fff4dc', background: 'linear-gradient(90deg,rgba(5,16,12,.88),rgba(5,16,12,.56) 68%,transparent)',
+            opacity: '0', transform: 'translateY(16px)', pointerEvents: 'none',
+            filter: 'drop-shadow(0 18px 32px rgba(0,0,0,.28))',
+            transition: 'opacity 260ms ease, transform 420ms cubic-bezier(.2,.82,.2,1)'
+          });
+          beat.style[side] = '62px';
+          Object.assign(rule.style, { display:'block', width:'5px', height:'100%', background:'#f2bb5a' });
+          Object.assign(copy.style, { display:'grid', gap:'9px' });
+          Object.assign(eyebrow.style, {
+            color:'#f2bb5a', font:'700 12px/1 "IBM Plex Mono",monospace',
+            letterSpacing:'.18em', textTransform:'uppercase'
+          });
+          Object.assign(title.style, {
+            maxWidth:'15ch', font:'600 43px/.94 Georgia,"Times New Roman",serif',
+            letterSpacing:'-.045em', textWrap:'balance'
+          });
+          document.body.appendChild(beat);
+          requestAnimationFrame(() => {
+            beat.style.opacity = '1';
+            beat.style.transform = 'translateY(0)';
+          });
+          window.setTimeout(() => {
+            beat.style.opacity = '0';
+            beat.style.transform = 'translateY(-8px)';
+          }, Math.max(500, duration * 1000 - 320));
+          window.setTimeout(() => beat.remove(), duration * 1000);
+        }""",
+        {"kicker": kicker, "headline": headline, "side": side, "duration": duration},
+    )
+    pause(page, 0.12)
+
+
 def show_engineering_overlay(page: Page) -> None:
     page.evaluate(
         """() => {
           const overlay = document.createElement('section');
           overlay.id = 'keepscape-engineering-proof';
           overlay.innerHTML = `
-            <div class="proof-head"><small>PUBLIC ENGINEERING EVIDENCE</small><h1>Built with Codex.<br>Proved in the repo.</h1></div>
+            <div class="proof-head"><small>PUBLIC ENGINEERING EVIDENCE</small><h1>Built with Codex.<br>Proved in public.</h1></div>
             <div class="proof-grid">
               <article><strong>62</strong><span>unit tests</span></article>
               <article><strong>4</strong><span>browser flows</span></article>
@@ -375,7 +445,7 @@ def show_engineering_overlay(page: Page) -> None:
             position:'fixed', inset:'0', zIndex:'2147483646', display:'grid',
             gridTemplateColumns:'0.9fr 1.1fr', alignItems:'center', gap:'64px', padding:'72px 88px',
             color:'#f7efdf', background:'linear-gradient(120deg,rgba(16,27,22,.97),rgba(27,54,44,.94))',
-            fontFamily:'Arial,sans-serif', opacity:'0', transition:'opacity 450ms ease'
+            fontFamily:'"IBM Plex Sans Variable","Avenir Next",sans-serif', opacity:'0', transition:'opacity 450ms ease'
           });
           const style = document.createElement('style');
           style.textContent = `
@@ -492,7 +562,6 @@ def capture(browser: Browser) -> None:
     if should_capture("01-loss"):
         context, page = new_page(browser)
         enter_exhibit(page, 0, "Lantern Lane, 1998")
-        shot_started = time.monotonic()
         spatial = page.get_by_role(
             "region",
             name="Generated spatial interpretation: Three photographs remembered one night",
@@ -501,15 +570,17 @@ def capture(browser: Browser) -> None:
             "Walkable photo diorama. Use arrow keys or the camera controls to move."
         )
         show_transformation_intro(page)
-        pause(page, 3.4)
+        pause(page, 0.25)
+        shot_started = time.monotonic()
+        pause(page, 3.0)
         reveal_exhibit_from_intro(page)
+        pause(page, 0.4)
+        glide_drag(page, viewport, 225, -88, 1.4)
         pause(page, 0.8)
-        glide_drag(page, viewport, 205, -82)
-        pause(page, 1.2)
         glide_click(page, spatial.get_by_role("button", name="Move deeper"))
-        pause(page, 1.5)
+        pause(page, 1.2)
         glide_click(page, spatial.get_by_role("button", name="Look left"))
-        pause(page, 2.2)
+        pause(page, 3.9)
         save_clip(context, page, "01-loss", shot_started)
 
     if should_capture("02-promise"):
@@ -520,65 +591,75 @@ def capture(browser: Browser) -> None:
             "region",
             name="Generated spatial interpretation: Three photographs remembered one night",
         )
-        pause(page, 1.5)
+        pause(page, 0.45)
         glide_click(page, spatial.get_by_role("button", name="Move deeper"))
-        pause(page, 1.4)
+        pause(page, 0.45)
         glide_click(page, spatial.get_by_role("button", name="Painted", exact=True))
-        pause(page, 2.2)
+        pause(page, 0.65)
         glide_click(page, spatial.get_by_role("button", name="Turn on Evidence Lens", exact=True))
-        spatial.get_by_text("cited photo region", exact=True).wait_for()
-        pause(page, 3.5)
-        glide_click(page, page.get_by_role("button", name="Trace to 3 sources"))
+        truth_thread = spatial.locator('[aria-label="Evidence Lens truth thread"]')
+        truth_thread.get_by_text("Every detail has a way home.", exact=True).wait_for()
+        show_cinematic_beat(
+            page,
+            "Evidence Lens",
+            "Every detail has a way home.",
+            duration=1.8,
+        )
+        pause(page, 4.8)
+        open_archive = truth_thread.get_by_role("button", name="Open full source archive")
+        open_archive.scroll_into_view_if_needed()
+        pause(page, 0.35)
+        glide_click(page, open_archive)
         drawer = page.get_by_role("dialog", name="Source archive")
         drawer.wait_for()
-        pause(page, 4.0)
-        drawer.locator("audio").scroll_into_view_if_needed()
-        pause(page, 4.2)
+        pause(page, 3.8)
         save_clip(context, page, "02-promise", shot_started)
 
     if should_capture("03-source-desk"):
         context, page = new_page(browser)
         open_source_desk(page)
-        set_page_zoom(page, 1.18)
-        shot_started = time.monotonic()
-        pause(page, 3.0)
+        set_page_zoom(page, 1.14)
         uncertain = page.get_by_text("The bicycle belonged to someone in the storyteller's family.")
         smooth_reveal(page, uncertain)
-        pause(page, 3.0)
+        shot_started = time.monotonic()
+        show_cinematic_beat(
+            page,
+            "Human truth control",
+            "Uncertain stays uncertain.",
+            side="left",
+            duration=1.8,
+        )
+        pause(page, 2.45)
         preserve = page.get_by_role("button", name="Preserve uncertainty")
         glide_click(page, preserve)
         kept_uncertain = page.get_by_text("Kept uncertain", exact=True).last
         kept_uncertain.wait_for()
-        pause(page, 3.3)
-        language_gate = page.get_by_role("heading", name="Review the generated story copy.")
-        smooth_reveal(page, language_gate)
-        pause(page, 2.5)
-        page.get_by_label(
-            "I reviewed the displayed claims and all generated exhibit, scene, hotspot, and interaction-draft copy against the listed sources."
-        ).check()
-        pause(page, 5.2)
+        pause(page, 7.55)
         save_clip(context, page, "03-source-desk", shot_started)
 
     if should_capture("04-codex"):
         context, page = new_page(browser)
         reach_build(page)
-        set_page_zoom(page, 1.12)
+        set_page_zoom(page, 1.08)
         shot_started = time.monotonic()
-        pause(page, 4.0)
+        show_cinematic_beat(
+            page,
+            "GPT-5.6 · You · Codex",
+            "Three hands. Clear boundaries.",
+            duration=1.8,
+        )
+        pause(page, 2.1)
         glide_click(page, page.get_by_role("button", name="Build this true story"))
         page.get_by_text(
             re.compile(r"^(PUBLIC REPLAY|LIVE RUN)$"),
         ).wait_for(timeout=60_000)
-        pause(page, 4.5)
+        pause(page, 1.2)
         live_proof = page.get_by_role(
             "link",
             name=re.compile(r"Verified live Codex SDK run", re.IGNORECASE),
         )
-        smooth_reveal(page, live_proof)
-        pause(page, 4.5)
-        final_gate = page.get_by_role("heading", name="Approve the final interaction language.")
-        smooth_reveal(page, final_gate)
-        pause(page, 7.5)
+        smooth_reveal(page, live_proof, duration=0.65)
+        pause(page, 11.8)
         save_clip(context, page, "04-codex", shot_started)
 
     if should_capture("05-lantern"):
@@ -589,102 +670,102 @@ def capture(browser: Browser) -> None:
             "region",
             name="Generated spatial interpretation: Three photographs remembered one night",
         )
-        pause(page, 0.8)
+        show_cinematic_beat(
+            page,
+            "Source-backed play",
+            "Three lights. Three sources.",
+            duration=1.6,
+        )
+        pause(page, 0.6)
         glide_click(
             page, spatial.get_by_role("button", name="Move deeper"), 0.3, 0.1
         )
-        pause(page, 0.7)
+        pause(page, 0.35)
         glide_click(
             page, spatial.get_by_role("button", name="Painted", exact=True), 0.3, 0.1
         )
-        pause(page, 0.8)
+        pause(page, 0.35)
         glide_click(page, page.get_by_role("button", name="Close memory detail"), 0.3, 0.1)
         glide_click(
             page, spatial.get_by_role("button", name="Tasseled", exact=True), 0.3, 0.1
         )
-        pause(page, 0.8)
+        pause(page, 0.35)
         glide_click(page, page.get_by_role("button", name="Close memory detail"), 0.3, 0.1)
         glide_click(
             page, spatial.get_by_role("button", name="Pale", exact=True), 0.3, 0.1
         )
-        complete = page.get_by_text("Archive trail complete", exact=True)
+        complete = spatial.get_by_text(
+            re.compile(r"3/3\s*·\s*archive awakened", re.IGNORECASE),
+        )
         complete.wait_for()
-        pause(page, 0.7)
-        glide_click(page, page.get_by_role("button", name="Close memory detail"), 0.3, 0.1)
-        smooth_reveal(page, complete, duration=0.7)
-        pause(page, 4.5)
+        pause(page, 5.2)
         save_clip(context, page, "05-lantern", shot_started)
 
     if should_capture("06-repair"):
         context, page = new_page(browser)
         enter_exhibit(page, 1, "Four Moves at the Repair Bench")
         shot_started = time.monotonic()
-        pause(page, 1.5)
-        glide_click(page, page.get_by_role("button", name="Ring"), 0.38, 0.12)
-        pause(page, 2.2)
+        show_cinematic_beat(
+            page,
+            "Evidence becomes mechanic",
+            "The memory sets the rules.",
+            duration=1.6,
+        )
+        pause(page, 0.6)
+        glide_click(page, page.get_by_role("button", name="Ring", exact=True), 0.32, 0.08)
+        pause(page, 0.65)
+        glide_click(
+            page,
+            page.get_by_role("button", name="Close memory detail"),
+            0.32,
+            0.08,
+        )
         for label in ["Turn", "Loosen", "Chain", "Ring"]:
-            glide_click(page, page.get_by_role("button", name=label), 0.38, 0.12)
-            pause(page, 0.85)
+            next_step = page.get_by_role(
+                "button",
+                name=re.compile(rf"^{re.escape(label)}(?:, next in sequence)?$"),
+            )
+            glide_click(page, next_step, 0.32, 0.08)
+            pause(page, 0.26)
             if label != "Ring":
                 glide_click(
                     page,
                     page.get_by_role("button", name="Close memory detail"),
-                    0.38,
-                    0.12,
+                    0.32,
+                    0.08,
                 )
-        complete = page.get_by_text("Archive trail complete", exact=True)
-        complete.wait_for()
-        pause(page, 0.7)
-        glide_click(
-            page,
-            page.get_by_role("button", name="Close memory detail"),
-            0.38,
-            0.12,
+        complete = page.get_by_text(
+            re.compile(r"4/4\s*·\s*archive awakened", re.IGNORECASE),
         )
-        smooth_reveal(page, complete, duration=0.7)
+        complete.wait_for()
         pause(page, 5.0)
         save_clip(context, page, "06-repair", shot_started)
 
     if should_capture("07-engineering"):
         context, page = new_page(browser)
-        # Warm the pinned receipt in this browser context before the recorded
-        # shot so GitHub latency cannot consume its readable screen time.
+        # Start on the warmed receipt, then keep the raw GitHub/JSON reveal
+        # under two seconds. The proof card carries the engineering story.
         response = page.goto(RECEIPT_URL, wait_until="domcontentloaded", timeout=60_000)
         if response is None or not response.ok:
             status = response.status if response is not None else "no response"
             raise RuntimeError(f"Pinned GitHub receipt did not preload: HTTP {status}")
         page.get_by_text("codexSdkVersion", exact=False).first.wait_for(timeout=60_000)
-
-        response = page.goto(REPO_URL, wait_until="domcontentloaded", timeout=60_000)
-        if response is None or not response.ok:
-            status = response.status if response is not None else "no response"
-            raise RuntimeError(f"Pinned GitHub repository did not load: HTTP {status}")
-        page.get_by_text("Walk into a true story.", exact=True).first.wait_for(timeout=60_000)
-        shot_started = time.monotonic()
-        show_engineering_overlay(page)
-        pause(page, 6.2)
-        hide_overlay(page, "keepscape-engineering-proof")
-        set_page_zoom(page, 1.16)
-        pause(page, 1.4)
-        response = page.goto(RECEIPT_URL, wait_until="domcontentloaded", timeout=60_000)
-        if response is None or not response.ok:
-            status = response.status if response is not None else "no response"
-            raise RuntimeError(f"Pinned GitHub receipt did not load: HTTP {status}")
-        receipt_marker = page.get_by_text("codexSdkVersion", exact=False).first
-        receipt_marker.wait_for(timeout=60_000)
         set_page_zoom(page, 1.34)
-        pause(page, 7.5)
+        shot_started = time.monotonic()
+        hide_cursor(page)
+        show_engineering_overlay(page)
+        pause(page, 7.4)
+        hide_overlay(page, "keepscape-engineering-proof")
+        pause(page, 1.35)
         save_clip(context, page, "07-engineering", shot_started)
 
     if should_capture("08-close"):
         context, page = new_page(browser)
         goto_deployed_app(page)
-        shot_started = time.monotonic()
         hide_cursor(page)
-        pause(page, 0.4)
         page.evaluate("""
           const close = document.createElement('div');
-          close.innerHTML = '<small>KEEPSCAPE</small><h1>Walk into a true story.</h1><p>Every fact has a way home.</p><footer>keepscape.lucasfutures-h1-20260507.workers.dev · github.com/gn00295120/keepscape</footer>';
+          close.innerHTML = '<small>KEEPSCAPE</small><h1>Walk into a true story.</h1><p>AI can build the place. It cannot rewrite the memory.</p><footer>keepscape.lucasfutures-h1-20260507.workers.dev · github.com/gn00295120/keepscape</footer>';
           Object.assign(close.style, {position:'fixed', inset:'0', zIndex:'2147483646', display:'grid',
             placeContent:'center', textAlign:'center', color:'#f2eadb', background:'#17231e',
             fontFamily:'"Archivo Variable", "IBM Plex Sans Variable", sans-serif', letterSpacing:'-.03em'});
@@ -694,12 +775,18 @@ def capture(browser: Browser) -> None:
           close.querySelector('footer').style.cssText='margin-top:42px;color:#b8c9bd;font:400 13px monospace;letter-spacing:.02em';
           document.body.appendChild(close);
         """)
-        pause(page, 6.2)
+        pause(page, 0.25)
+        shot_started = time.monotonic()
+        pause(page, 5.2)
         save_clip(context, page, "08-close", shot_started)
 
 
 RAW.mkdir(parents=True, exist_ok=True)
 WORK.mkdir(parents=True, exist_ok=True)
+for clip_name in DEMO_ONLY or CLIP_NAMES:
+    (RAW / f"{clip_name}.webm").unlink(missing_ok=True)
+    (WORK / f"{clip_name}.full.webm").unlink(missing_ok=True)
+    (WORK / f"{clip_name}.trimmed.webm").unlink(missing_ok=True)
 
 with sync_playwright() as playwright:
     browser = playwright.chromium.launch(headless=True)

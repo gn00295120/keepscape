@@ -16,6 +16,8 @@ DEMO_OUT = Path(os.environ.get("DEMO_OUT", "/tmp/keepscape-demo")).expanduser()
 NARRATION_FILE = Path(
     os.environ.get("NARRATION_FILE", str(ROOT / "docs" / "DEMO_NARRATION.md")),
 ).expanduser()
+VOICE_SOURCE_RAW = os.environ.get("DEMO_VOICE_DIR", "").strip()
+VOICE_SOURCE = Path(VOICE_SOURCE_RAW).expanduser() if VOICE_SOURCE_RAW else None
 
 RAW = DEMO_OUT / "raw"
 WORK = DEMO_OUT / "render-work"
@@ -25,6 +27,7 @@ FINAL_MP4 = DEMO_OUT / "keepscape-demo.mp4"
 FINAL_SRT = DEMO_OUT / "keepscape-demo.srt"
 STAGED_MP4 = DEMO_OUT / ".keepscape-demo.rendering.mp4"
 STAGED_SRT = DEMO_OUT / ".keepscape-demo.rendering.srt"
+VOICE_ONLY_MP4 = DEMO_OUT / ".keepscape-demo.voice-only.mp4"
 CONCAT_FILE = WORK / "segments.ffconcat"
 
 SEGMENT_NUMBERS = tuple(range(1, 9))
@@ -230,6 +233,22 @@ def preflight_narration_budget(narration: dict[int, str]) -> None:
 
 def synthesize_voice(segment: DemoSegment) -> None:
     segment.text_path.write_text(f"{segment.text}\n", encoding="utf-8")
+    if VOICE_SOURCE is not None:
+        if not segment.voice_path.is_file():
+            raise RuntimeError(f"External voice clip does not exist: {segment.voice_path}")
+        source_text_path = VOICE_SOURCE / f"{segment.number:02d}.txt"
+        if not source_text_path.is_file():
+            raise RuntimeError(f"External voice transcript does not exist: {source_text_path}")
+        source_text = re.sub(r"\s+", " ", source_text_path.read_text(encoding="utf-8")).strip()
+        if source_text != segment.text:
+            raise RuntimeError(
+                f"External voice transcript {source_text_path} does not match narration section "
+                f"{segment.number:02d}",
+            )
+        segment.voice_duration = probe_duration(segment.voice_path)
+        segment.target_duration = segment.voice_duration + TAIL_PAUSE_SECONDS
+        return
+
     segment.voice_path.unlink(missing_ok=True)
     run(
         [
@@ -358,6 +377,77 @@ def concatenate_segments(segments: list[DemoSegment], output_path: Path) -> None
             str(CONCAT_FILE),
             "-c",
             "copy",
+            "-movflags",
+            "+faststart",
+            str(output_path),
+        ],
+    )
+
+
+def add_ambient_soundtrack(input_path: Path, output_path: Path, duration: float) -> None:
+    """Lay a quiet, original ambient bed under the narration.
+
+    The bed is synthesized at render time, so the release has no third-party
+    music rights or attribution dependency. Its gain is deliberately low: it
+    joins segment boundaries and removes dead-air cuts without competing with
+    the spoken demo.
+    """
+    fade_out_start = max(0.0, duration - 2.5)
+    tone = (
+        "aevalsrc="
+        "0.014*(sin(2*PI*65.406*t)+0.58*sin(2*PI*98.000*t)+"
+        "0.32*sin(2*PI*164.814*t))*(0.78+0.22*sin(2*PI*0.045*t))"
+        f":s=48000:d={duration:.6f}"
+    )
+    air = f"anoisesrc=color=pink:amplitude=0.010:sample_rate=48000:duration={duration:.6f}"
+    filter_graph = (
+        f"[1:a]highpass=f=42,lowpass=f=1200,volume=0.48,"
+        f"afade=t=in:st=0:d=2.5,afade=t=out:st={fade_out_start:.6f}:d=2.5[tone];"
+        f"[2:a]highpass=f=180,lowpass=f=3200,volume=0.12,"
+        f"afade=t=in:st=0:d=1.8,afade=t=out:st={fade_out_start:.6f}:d=2.5[air];"
+        "[tone][air]amix=inputs=2:normalize=0[bed];"
+        "[0:a][bed]amix=inputs=2:normalize=0:weights='1 1',"
+        "alimiter=limit=0.94,"
+        "aformat=sample_fmts=fltp:sample_rates=48000:channel_layouts=stereo[a]"
+    )
+
+    output_path.unlink(missing_ok=True)
+    run(
+        [
+            "ffmpeg",
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-i",
+            str(input_path),
+            "-f",
+            "lavfi",
+            "-i",
+            tone,
+            "-f",
+            "lavfi",
+            "-i",
+            air,
+            "-filter_complex",
+            filter_graph,
+            "-map",
+            "0:v:0",
+            "-map",
+            "[a]",
+            "-t",
+            f"{duration:.6f}",
+            "-c:v",
+            "copy",
+            "-c:a",
+            "aac",
+            "-b:a",
+            "192k",
+            "-ar",
+            "48000",
+            "-ac",
+            "2",
             "-movflags",
             "+faststart",
             str(output_path),
@@ -641,11 +731,15 @@ def publish_staged_outputs() -> None:
 
 
 def main() -> None:
-    for tool in ("say", "ffmpeg", "ffprobe"):
+    required_tools = ["ffmpeg", "ffprobe"]
+    if VOICE_SOURCE is None:
+        required_tools.append("say")
+    for tool in required_tools:
         require_tool(tool)
 
     STAGED_MP4.unlink(missing_ok=True)
     STAGED_SRT.unlink(missing_ok=True)
+    VOICE_ONLY_MP4.unlink(missing_ok=True)
     try:
         narration = parse_narration(NARRATION_FILE)
         preflight_narration_budget(narration)
@@ -659,7 +753,11 @@ def main() -> None:
                 text=narration[number],
                 raw_path=raw_clips[number],
                 text_path=VOICE / f"{number:02d}.txt",
-                voice_path=VOICE / f"{number:02d}.aiff",
+                voice_path=(
+                    VOICE_SOURCE / f"{number:02d}.wav"
+                    if VOICE_SOURCE is not None
+                    else VOICE / f"{number:02d}.aiff"
+                ),
                 rendered_path=SEGMENTS / f"{number:02d}.mp4",
             )
             for number in SEGMENT_NUMBERS
@@ -686,7 +784,9 @@ def main() -> None:
         if len(rendered_clips) != 8:
             raise RuntimeError(f"Expected 8 rendered clips; found {len(rendered_clips)}")
 
-        concatenate_segments(segments, STAGED_MP4)
+        concatenate_segments(segments, VOICE_ONLY_MP4)
+        voice_only_duration = validate_h264_aac(VOICE_ONLY_MP4)
+        add_ambient_soundtrack(VOICE_ONLY_MP4, STAGED_MP4, voice_only_duration)
         final_duration = validate_h264_aac(STAGED_MP4)
         if final_duration >= MAX_FINAL_DURATION_SECONDS:
             raise RuntimeError(
@@ -704,6 +804,7 @@ def main() -> None:
         # never leaves a candidate file under the uploadable final filenames.
         STAGED_MP4.unlink(missing_ok=True)
         STAGED_SRT.unlink(missing_ok=True)
+        VOICE_ONLY_MP4.unlink(missing_ok=True)
 
 
 if __name__ == "__main__":
