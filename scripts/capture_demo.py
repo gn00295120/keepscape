@@ -229,7 +229,7 @@ def verify_final_targets(browser: Browser) -> None:
             "heading",
             name="Keep the memory. Question the guess.",
         ).wait_for(timeout=60_000)
-        page.get_by_text(DEPLOY_MARKER, exact=True).wait_for(timeout=60_000)
+        page.get_by_role("heading", name=DEPLOY_MARKER, exact=True).wait_for(timeout=60_000)
         page.get_by_text(
             "The bicycle belonged to someone in the storyteller's family.",
             exact=True,
