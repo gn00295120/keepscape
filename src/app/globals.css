@@ -1773,6 +1773,45 @@ label[for]:focus-visible {
   font: 400 10px/1.5 var(--font-mono);
 }
 
+.live-proof {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(242, 187, 90, 0.58);
+  color: var(--paper-light);
+  background: rgba(242, 187, 90, 0.08);
+  text-decoration: none;
+}
+
+.live-proof > svg {
+  color: var(--gold);
+}
+
+.live-proof span {
+  display: grid;
+  gap: 3px;
+}
+
+.live-proof strong {
+  color: var(--gold);
+  font: 650 11px/1.2 var(--font-mono);
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.live-proof small {
+  color: rgba(232, 224, 207, 0.72);
+  font: 400 10px/1.4 var(--font-mono);
+}
+
+.live-proof:hover {
+  border-color: var(--gold);
+  background: rgba(242, 187, 90, 0.14);
+}
+
 .build-actions {
   margin-top: 30px;
 }

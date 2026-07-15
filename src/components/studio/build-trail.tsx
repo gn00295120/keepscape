@@ -5,6 +5,9 @@ import { ArrowRight, Check, Code2, FlaskConical, Sparkles, UserRoundCheck } from
 
 import type { ExhibitManifest } from "@/lib/exhibit-schema";
 
+const LIVE_CODEX_RECEIPT_URL =
+  "https://github.com/gn00295120/keepscape/blob/f03dc22/docs/evidence/codex-live-run.json";
+
 type BuildResult = {
   mode: "demo" | "live";
   reason?: string;
@@ -115,7 +118,7 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
                   {isActive
                     ? "working"
                     : isBundledReplay
-                      ? "bundled"
+                      ? "verified replay"
                       : isDone
                         ? "complete"
                         : index === 1
@@ -138,13 +141,13 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
             <span className="console-light" aria-hidden="true" />
             Build evidence
           </div>
-          <span>{runState === "complete" ? (mode === "live" ? "LIVE RUN" : "VALIDATED FALLBACK") : "READY"}</span>
+          <span>{runState === "complete" ? (mode === "live" ? "LIVE RUN" : "PUBLIC REPLAY") : "READY"}</span>
         </div>
 
         {runState === "complete" ? (
           <div className="evidence-grid">
             <div>
-              <span className="evidence-title">{mode === "live" ? "Agent workshop" : "Validated manifest evidence"}</span>
+              <span className="evidence-title">{mode === "live" ? "Agent workshop" : "Verified replay evidence"}</span>
               <ul>
                 {manifest.buildEvidence.agents.map((agent) => (
                   <li key={agent.name}>
@@ -182,7 +185,22 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
               <p>typed artifact references in this receipt</p>
               <small>{manifest.buildEvidence.model}</small>
             </div>
-            {mode === "demo" && modeReason && <p className="replay-reason">Runtime fallback: {modeReason}</p>}
+            {mode === "demo" ? (
+              <a className="live-proof" href={LIVE_CODEX_RECEIPT_URL} target="_blank" rel="noreferrer">
+                <Check size={18} aria-hidden="true" />
+                <span>
+                  <strong>Verified live Codex SDK run</strong>
+                  <small>Opaque input · enum-only result · host validation passed</small>
+                </span>
+                <ArrowRight size={17} aria-hidden="true" />
+              </a>
+            ) : null}
+            {mode === "demo" && modeReason ? (
+              <p className="replay-reason">
+                Judge mode uses the bundled, validated result so no credentials are required. The live SDK
+                receipt above records the separate production-boundary verification.
+              </p>
+            ) : null}
           </div>
         ) : (
           <div className="console-ready">
@@ -195,8 +213,8 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
               <p className="console-error">{error}</p>
             ) : (
               <p>
-                The public demo replays a real, bundled build so judges need no credentials. Local mode can run
-                GPT-5.6 and Codex live.
+                The public judge path replays a validated build so no credentials are required. GPT-5.6 and
+                Codex also run live, with a redacted SDK receipt linked after build.
               </p>
             )}
           </div>

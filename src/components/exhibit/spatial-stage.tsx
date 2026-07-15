@@ -178,8 +178,8 @@ export function SpatialStage({
     hotspot.sourceIds.every((sourceId) => sourceById.get(sourceId)?.kind !== "photo"),
   );
   const worldStyle = {
-    "--camera-depth": `${depth * 86}px`,
-    "--camera-yaw": `${yaw * 8}deg`,
+    "--camera-depth": `${depth * 142}px`,
+    "--camera-yaw": `${yaw * 14}deg`,
   } as CSSProperties;
 
   const moveDepth = (delta: number) => setDepth((current) => clamp(Math.round(current + delta), 0, 2));
