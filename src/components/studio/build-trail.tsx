@@ -33,6 +33,13 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
   const [modeReason, setModeReason] = useState<string>();
   const [runTrace, setRunTrace] = useState<BuildResult["trace"]>([]);
   const [error, setError] = useState<string>();
+  const finalInteraction = manifest.scenes[0]?.interaction;
+  const finalTargetIds = finalInteraction
+    ? finalInteraction.kind === "collect"
+      ? finalInteraction.targetHotspotIds
+      : finalInteraction.stepHotspotIds
+    : [];
+  const hotspotById = new Map(manifest.scenes[0]?.hotspots.map((hotspot) => [hotspot.id, hotspot]) ?? []);
 
   async function runBuild() {
     setRunState("running");
@@ -73,7 +80,9 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
     {
       name: "Codex",
       role: "Exhibit workshop",
-      detail: "Creates the story-specific typed interaction; the host then validates every allowed reference.",
+      detail: manifest.scenes.some((scene) => scene.spatial)
+        ? "Compiles the story into a typed interaction and bounded spatial preset; the host validates every source, plane, anchor, and interaction reference."
+        : "Creates the story-specific typed interaction; the host then validates every allowed reference.",
       Icon: Code2,
     },
   ];
@@ -120,13 +129,13 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
             <span className="console-light" aria-hidden="true" />
             Build evidence
           </div>
-          <span>{runState === "complete" ? (mode === "live" ? "LIVE RUN" : "VERIFIED REPLAY") : "READY"}</span>
+          <span>{runState === "complete" ? (mode === "live" ? "LIVE RUN" : "VALIDATED FALLBACK") : "READY"}</span>
         </div>
 
         {runState === "complete" ? (
           <div className="evidence-grid">
             <div>
-              <span className="evidence-title">{mode === "live" ? "Agent workshop" : "Checked-in artifact receipt"}</span>
+              <span className="evidence-title">{mode === "live" ? "Agent workshop" : "Validated manifest evidence"}</span>
               <ul>
                 {manifest.buildEvidence.agents.map((agent) => (
                   <li key={agent.name}>
@@ -164,7 +173,7 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
               <p>typed artifact references in this receipt</p>
               <small>{manifest.buildEvidence.model}</small>
             </div>
-            {mode === "demo" && modeReason && <p className="replay-reason">Demo fallback: {modeReason}</p>}
+            {mode === "demo" && modeReason && <p className="replay-reason">Runtime fallback: {modeReason}</p>}
           </div>
         ) : (
           <div className="console-ready">
@@ -185,6 +194,53 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
         )}
       </div>
 
+      {runState === "complete" && finalInteraction ? (
+        <section className="final-copy-review" aria-labelledby="final-copy-review-title">
+          <div>
+            <span className="ticket-number">Post-Codex human gate</span>
+            <h2 id="final-copy-review-title">Approve the final interaction language.</h2>
+            <p>
+              Codex may shape state copy, but it is instructed not to add story facts. The final semantic decision
+              remains yours; entering records this visible read-through as provenance.
+            </p>
+          </div>
+          <dl>
+            <div>
+              <dt>Mechanic</dt>
+              <dd>{finalInteraction.kind === "collect" ? "Collection · independent targets" : "Sequence · required source order"}</dd>
+            </div>
+            <div>
+              <dt>{finalInteraction.kind === "collect" ? "Targets" : "Required order"}</dt>
+              <dd>
+                <ol className="final-copy-review__targets">
+                  {finalTargetIds.map((hotspotId) => (
+                    <li key={hotspotId}>{hotspotById.get(hotspotId)?.title ?? hotspotId}</li>
+                  ))}
+                </ol>
+              </dd>
+            </div>
+            <div>
+              <dt>Prompt</dt>
+              <dd>{finalInteraction.prompt}</dd>
+            </div>
+            <div>
+              <dt>{finalInteraction.kind === "collect" ? "Completion" : "Success"}</dt>
+              <dd>
+                {finalInteraction.kind === "collect"
+                  ? finalInteraction.completionMessage
+                  : finalInteraction.successMessage}
+              </dd>
+            </div>
+            {finalInteraction.kind === "sequence" ? (
+              <div>
+                <dt>Retry</dt>
+                <dd>{finalInteraction.retryMessage}</dd>
+              </div>
+            ) : null}
+          </dl>
+        </section>
+      ) : null}
+
       <div className="view-actions build-actions">
         <button className="button button--quiet" type="button" onClick={onBack} disabled={runState === "running"}>
           Return to sources
@@ -196,7 +252,7 @@ export function BuildTrail({ manifest, onBack, onBuild, onLaunch }: BuildTrailPr
           </button>
         ) : (
           <button className="button button--accent button--launch" type="button" onClick={onLaunch}>
-            Enter {manifest.title}
+            Approve final interaction &amp; enter {manifest.title}
             <ArrowRight size={18} aria-hidden="true" />
           </button>
         )}

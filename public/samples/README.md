@@ -2,13 +2,19 @@
 
 The two archives in this directory are fictional demonstration material, not real family records.
 
-- The SVG illustrations and synthetic narration files are original Build Week demonstration assets and are
-  released with the source under the repository's MIT License.
+- The four photorealistic source images were generated with OpenAI image generation specifically for this
+  fictional demo. They do not depict real archives, places, or people. The stage SVGs are original Build Week
+  illustrations. Both asset sets are released with the source under the repository's MIT License.
 - `night-market-voice.m4a` and `repair-bench-voice.m4a` are synthetic macOS system-voice readings of the
   fictional sample transcripts. They are labeled synthetic in the product and exist only to make timecode
   provenance testable without publishing a person's private voice.
 - The product does not clone or imitate a real individual. A real Keepscape archive would use the storyteller's
   uploaded original recording, with their consent.
+
+The product labels the generated demo photos at every source occurrence. They are used because real family
+media would be inappropriate to publish in a credential-free judging fixture.
+
+Prompt intent and the checked-in derivative list are documented in [`docs/SAMPLE_ASSETS.md`](../../docs/SAMPLE_ASSETS.md).
 
 ## Night-market transcript
 

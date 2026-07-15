@@ -1,4 +1,7 @@
+"use client";
+
 import { Check, FileAudio, Image as ImageIcon, MessageSquareText, ShieldCheck } from "lucide-react";
+import { useState } from "react";
 
 import type { ExhibitManifest, GroundedClaim, Source } from "@/lib/exhibit-schema";
 
@@ -25,9 +28,16 @@ function sourceLocator(source: Source) {
     return `${source.timeStartSeconds}s${end}`;
   }
   if (source.kind === "photo" && source.region) {
-    return "marked photo region";
+    const wholePhoto =
+      source.region.x === 0 && source.region.y === 0 && source.region.width === 1 && source.region.height === 1;
+    return wholePhoto ? "full photo evidence view" : "marked photo region";
   }
-  return source.kind === "human" ? "family confirmation" : "full source";
+  if (source.kind === "photo") return "full photo source";
+  if (source.kind === "audio") return "full audio source";
+  if (source.humanRole === "story-note") return "storyteller-provided note";
+  if (source.humanRole === "confirmation") return "family confirmation";
+  if (source.humanRole === "uncertainty-preserved") return "deliberately kept uncertain";
+  return "language review receipt";
 }
 
 function claimStatus(
@@ -57,6 +67,7 @@ export function SourceDesk({
   onApprove,
   onBack,
 }: SourceDeskProps) {
+  const [generatedCopyReviewed, setGeneratedCopyReviewed] = useState(false);
   const sourceById = new Map(manifest.sources.map((source) => [source.id, source]));
   const unresolvedClaims = manifest.claims.filter(
     (claim) =>
@@ -64,6 +75,17 @@ export function SourceDesk({
       !confirmedClaimIds.has(claim.id) &&
       !preservedClaimIds.has(claim.id),
   );
+  const generatedCopyFieldCount =
+    manifest.claims.length +
+    4 +
+    manifest.scenes.reduce(
+      (total, scene) =>
+        total +
+        3 +
+        scene.hotspots.reduce((hotspotTotal, hotspot) => hotspotTotal + (hotspot.interpretation ? 4 : 3), 0) +
+        (scene.interaction.kind === "sequence" ? 5 : 4),
+      0,
+    );
 
   return (
     <section className="studio-view source-desk" aria-labelledby="source-desk-title">
@@ -164,6 +186,111 @@ export function SourceDesk({
             })}
           </ol>
 
+          <section className="copy-review" aria-labelledby="copy-review-title">
+            <div className="copy-review__heading">
+              <div>
+                <span className="ticket-number">Human language gate</span>
+                <h2 id="copy-review-title">Review the generated story copy.</h2>
+              </div>
+              <span>{generatedCopyFieldCount} displayed fields</span>
+            </div>
+            <p className="copy-review__intro">
+              The host can prove that references resolve; only a person can decide whether the generated wording
+              stays faithful to the material. Claims are shown above; every other GPT-authored story field is shown
+              below before build.
+            </p>
+            <div className="copy-review__scenes">
+              <article>
+                <span>Exhibit title</span>
+                <h3>{manifest.title}</h3>
+                <span>Subtitle</span>
+                <p>{manifest.subtitle}</p>
+                <details>
+                  <summary>Inspect dedication and truth note</summary>
+                  <ul>
+                    <li>
+                      <strong>Dedication</strong>
+                      <p>{manifest.dedication}</p>
+                    </li>
+                    <li>
+                      <strong>Truth note</strong>
+                      <p>{manifest.truthNote}</p>
+                    </li>
+                  </ul>
+                </details>
+              </article>
+              {manifest.scenes.map((scene) => (
+                <article key={scene.id}>
+                  <span>Scene framing</span>
+                  <h3>{scene.title}</h3>
+                  <p>{scene.eyebrow}</p>
+                  <span>Narration</span>
+                  <p>{scene.narration}</p>
+                  <details>
+                    <summary>Inspect {scene.hotspots.length} hotspot copy groups</summary>
+                    <ul>
+                      {scene.hotspots.map((hotspot) => (
+                        <li key={hotspot.id}>
+                          <strong>{hotspot.title} · control label “{hotspot.shortLabel}”</strong>
+                          <p>{hotspot.body}</p>
+                          {hotspot.interpretation ? <p>Interpretation label: {hotspot.interpretation}</p> : null}
+                          <small>
+                            Cites {hotspot.sourceIds.map((sourceId) => sourceById.get(sourceId)?.label ?? sourceId).join(" · ")}
+                          </small>
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                  <details>
+                    <summary>Inspect the pre-Codex interaction draft</summary>
+                    <ul>
+                      <li>
+                        <strong>Mechanic</strong>
+                        <p>{scene.interaction.kind === "collect" ? "Collection · independent targets" : "Sequence · required source order"}</p>
+                      </li>
+                      <li>
+                        <strong>{scene.interaction.kind === "collect" ? "Targets" : "Required order"}</strong>
+                        <p>
+                          {(scene.interaction.kind === "collect"
+                            ? scene.interaction.targetHotspotIds
+                            : scene.interaction.stepHotspotIds)
+                            .map((hotspotId) => scene.hotspots.find((hotspot) => hotspot.id === hotspotId)?.title ?? hotspotId)
+                            .join(" → ")}
+                        </p>
+                      </li>
+                      <li>
+                        <strong>Prompt</strong>
+                        <p>{scene.interaction.prompt}</p>
+                      </li>
+                      <li>
+                        <strong>{scene.interaction.kind === "collect" ? "Completion" : "Success"}</strong>
+                        <p>
+                          {scene.interaction.kind === "collect"
+                            ? scene.interaction.completionMessage
+                            : scene.interaction.successMessage}
+                        </p>
+                      </li>
+                      {scene.interaction.kind === "sequence" ? (
+                        <li>
+                          <strong>Retry</strong>
+                          <p>{scene.interaction.retryMessage}</p>
+                        </li>
+                      ) : null}
+                    </ul>
+                  </details>
+                </article>
+              ))}
+            </div>
+            <label className="copy-review__approval">
+              <input
+                type="checkbox"
+                checked={generatedCopyReviewed}
+                onChange={(event) => setGeneratedCopyReviewed(event.target.checked)}
+              />
+              <span>I reviewed the displayed claims and all generated exhibit, scene, hotspot, and interaction-draft copy against the listed sources.</span>
+            </label>
+          </section>
+
           <div className="truth-note">
             <span>Truth note</span>
             <p>{manifest.truthNote}</p>
@@ -174,14 +301,18 @@ export function SourceDesk({
               Choose another story
             </button>
             <div className="view-actions__primary">
-              {unresolvedClaims.length > 0 && (
-                <p role="status">Confirm {unresolvedClaims.length} uncertain detail{unresolvedClaims.length > 1 ? "s" : ""} first.</p>
+              {(unresolvedClaims.length > 0 || !generatedCopyReviewed) && (
+                <p role="status">
+                  {unresolvedClaims.length > 0
+                    ? `Resolve ${unresolvedClaims.length} uncertain detail${unresolvedClaims.length > 1 ? "s" : ""} first.`
+                    : "Complete the generated-language review first."}
+                </p>
               )}
               <button
                 className="button button--ink"
                 type="button"
                 onClick={onApprove}
-                disabled={unresolvedClaims.length > 0}
+                disabled={unresolvedClaims.length > 0 || !generatedCopyReviewed}
               >
                 Approve the story map
                 <Check size={17} aria-hidden="true" />

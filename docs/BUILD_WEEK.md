@@ -47,7 +47,12 @@ shown or proven in the demo is lower priority than an end-to-end capability that
 
 - Devpost registration exists.
 - Project `1330616` exists as an empty `submission_pre_draft`; it is not a final submission.
-- No final name, category, description, repository URL, demo URL, or session ID has been entered.
+- Final product name: **Keepscape**. Category: **Apps for Your Life**.
+- Public repository: <https://github.com/gn00295120/keepscape>.
+- Hosted judge experience: <https://keepscape.lucasfutures-h1-20260507.workers.dev>.
+- The Devpost draft has not yet been populated with the prepared description, repository, hosted URL, video,
+  or session ID.
+- Public YouTube demo is still pending final capture and upload.
 - Core Build Week Codex thread / `/feedback` candidate: `019f62dd-efe8-7e41-96b6-5293d13b88cb`.
 
 ## Submission form fields

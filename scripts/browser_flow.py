@@ -26,17 +26,26 @@ def attach_error_capture(page: Page, errors: list[str]) -> None:
     )
 
 
-def enter_exhibit(page: Page, sample_index: int, title: str) -> None:
+def enter_exhibit(page: Page, sample_index: int, title: str, capture_review: bool = False) -> None:
     page.get_by_role("button", name="Open source desk").nth(sample_index).click()
     page.get_by_role("heading", name="Keep the memory. Question the guess.").wait_for()
     if page.get_by_role("button", name="Confirm as remembered").count():
         page.get_by_role("button", name="Confirm as remembered").click()
+    page.get_by_label(
+        "I reviewed the displayed claims and all generated exhibit, scene, hotspot, and interaction-draft copy against the listed sources."
+    ).check()
+    if capture_review:
+        page.get_by_role("heading", name="Review the generated story copy.").scroll_into_view_if_needed()
+        page.screenshot(path="/tmp/keepscape-qa/source-desk-language-gate.png", full_page=False)
     page.get_by_role("button", name="Approve the story map").click()
     page.get_by_role("heading", name="A memory becomes a place.").wait_for()
     page.get_by_role("button", name="Build this true story").click()
-    launch = page.get_by_role("button", name=f"Enter {title}")
+    launch = page.get_by_role("button", name=f"Approve final interaction & enter {title}")
     launch.wait_for(timeout=15_000)
-    assert "Demo fallback" in page.locator("body").inner_text()
+    assert "Runtime fallback" in page.locator("body").inner_text()
+    if capture_review:
+        page.get_by_role("heading", name="Approve the final interaction language.").scroll_into_view_if_needed()
+        page.screenshot(path="/tmp/keepscape-qa/post-codex-language-gate.png", full_page=False)
     launch.click()
     page.get_by_role("heading", name=title, exact=True).first.wait_for()
 
@@ -52,10 +61,28 @@ with sync_playwright() as playwright:
     page = browser.new_page(viewport={"width": 1440, "height": 1000})
     attach_error_capture(page, desktop_errors)
     page.goto(BASE_URL, wait_until="networkidle")
-    enter_exhibit(page, 0, "Lantern Lane, 1998")
+    page.get_by_role("heading", name="Walk into a true story.").wait_for()
+    page.screenshot(path="/tmp/keepscape-qa/home-desktop.png", full_page=False)
+    enter_exhibit(page, 0, "Lantern Lane, 1998", capture_review=True)
+    spatial = page.get_by_role(
+        "region",
+        name="Generated spatial interpretation: Three photographs remembered one night",
+    )
+    spatial.wait_for()
     page.screenshot(path="/tmp/keepscape-qa/lantern-start.png", full_page=True)
 
-    page.get_by_role("button", name="Painted").click()
+    spatial.get_by_role("button", name="View flat exhibit").click()
+    page.get_by_label("Interactive illustrated scene: Three photographs remembered one night").wait_for()
+    page.get_by_role("button", name="Enter spatial view").click()
+    spatial.wait_for()
+    spatial.get_by_role("button", name="Move deeper").click()
+    spatial.get_by_role("button", name="Move deeper").click()
+    assert spatial.get_by_role("button", name="Move deeper").is_disabled()
+    spatial.get_by_role("button", name="Painted", exact=True).click()
+    spatial.get_by_role("button", name="Turn on Evidence Lens", exact=True).click()
+    spatial.get_by_text("Evidence Lens active", exact=True).wait_for()
+    spatial.get_by_text("cited photo region", exact=True).wait_for()
+    page.screenshot(path="/tmp/keepscape-qa/spatial-evidence-lens.png", full_page=True)
     page.get_by_role("button", name="Trace to 3 sources").click()
     page.get_by_role("dialog", name="Source archive").wait_for()
     assert page.locator("audio").count() == 1
@@ -65,9 +92,9 @@ with sync_playwright() as playwright:
     page.wait_for_timeout(100)
     assert page.get_by_role("button", name="Trace to 3 sources").evaluate("element => element === document.activeElement")
     page.get_by_role("button", name="Close memory detail").click()
-    page.get_by_role("button", name="Tasseled").click()
+    spatial.get_by_role("button", name="Tasseled", exact=True).click()
     page.get_by_role("button", name="Close memory detail").click()
-    page.get_by_role("button", name="Pale").click()
+    spatial.get_by_role("button", name="Pale", exact=True).click()
     assert "Three lights, three citations" in page.locator("body").inner_text()
     page.get_by_text("Archive trail complete", exact=True).wait_for(timeout=2_000)
     page.screenshot(path="/tmp/keepscape-qa/lantern-complete.png", full_page=True)
@@ -83,6 +110,17 @@ with sync_playwright() as playwright:
     assert "That move came later" in page.locator("body").inner_text()
     for label in ["Turn", "Loosen", "Chain", "Ring"]:
         page.get_by_role("button", name=label).click()
+        if label == "Loosen":
+            trace_button = page.get_by_role("button", name="Trace to 2 sources")
+            trace_button.click()
+            drawer = page.get_by_role("dialog", name="Source archive")
+            drawer.wait_for()
+            assert drawer.get_by_text("AI-generated fictional demo photo · small wrench", exact=True).count() == 1
+            assert drawer.get_by_text("Cited segment 0:04–0:06", exact=False).count() == 1
+            page.screenshot(path="/tmp/keepscape-qa/repair-source-drawer.png", full_page=True)
+            drawer.get_by_role("button", name="Close source archive").click()
+            page.wait_for_timeout(100)
+            assert trace_button.evaluate("element => element === document.activeElement")
         if label != "Ring":
             page.get_by_role("button", name="Close memory detail").click()
     assert "The wheel turns clean" in page.locator("body").inner_text()

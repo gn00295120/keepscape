@@ -14,8 +14,8 @@ Apps for Your Life
 
 ## One-line description
 
-Keepscape uses GPT-5.6 and Codex to turn real photos and original voice into a bespoke, playable memory exhibit
-where every factual detail links back to its source.
+Keepscape uses GPT-5.6 and Codex to turn real photos and original voice into a source-grounded, walkable memory
+space where every factual detail links back to its source.
 
 ## Inspiration
 
@@ -28,34 +28,53 @@ person who told it?
 
 ## What it does
 
-Keepscape accepts three to five photos, a transcript, and an optional original recording. GPT-5.6 maps claims
-to supplied photo and transcript evidence, separates supported facts from uncertainty, and creates a
-source-linked story blueprint. The storyteller confirms or deliberately preserves what the sources cannot
-establish. Codex then creates a small typed interaction shaped around that memory, and the host validates it.
+Keepscape accepts three to five photos, story text, and an optional original recording. GPT-5.6 maps claims
+to the supplied material, separates supported facts from uncertainty, and creates a
+strict source-linked story blueprint containing claims, hotspots, and narrative copy—not spatial geometry or
+shared cross-photo anchors. The host first compiles the three to five photo sources into a safe diorama. The
+storyteller must then confirm or deliberately preserve every uncertain claim and review every displayed claim
+and GPT-authored story field. A text-only note never masquerades as audio or receives a fabricated timecode.
+Codex returns a typed interaction and bounded spatial plan; the host validates those structures without
+pretending to judge historical truth. The final mechanic, target set or order, prompt, and completion/retry copy
+are shown for human approval before entry.
 
-One story might become a lantern trail where visitors collect the objects named in a night-market memory.
-Another might become a hands-on repair ritual where the order itself carries meaning. The result is not a
-reskinned slideshow: the interaction changes with the story.
+One story becomes a three-photo night-market corridor that visitors can move through and explore. Another
+becomes a hands-on repair ritual where the order itself carries meaning. The result is not a reskinned
+slideshow: the spatial arrangement and interaction change with the story.
 
-Every factual object opens a source card. The bundled judge archives include exact photo regions and narration
-timecodes; explicit human confirmations become new provenance sources. Generated scenery is labeled as
-interpretation. Keepscape never clones a voice, recreates a person, or presents model confidence as history.
+The signature **Evidence Lens** desaturates generated scenery while keeping the selected cited source view
+legible. When reviewed region metadata exists—as it does in the manually calibrated judge fixture—it outlines
+that cited region inside the original view. Every object can still open a source card with narration timecodes
+or explicit human confirmation. The space is plainly labeled as a generated spatial interpretation—not a scan
+or reconstruction. Keepscape never clones a voice, recreates a person, or presents model confidence as history.
 
 ## How we built it
 
-- **GPT-5.6** produces a typed story blueprint with claims, uncertainty, source links, moments, and interaction
-  affordances using structured output.
-- A **human grounding desk** makes uncertainty reviewable before generation.
-- The **Codex SDK** converts an approved blueprint into a typed interaction spec inside an isolated, no-network
-  workspace. The host then runs schema, reference-integrity, and hotspot-allowlist checks.
+- **GPT-5.6** uses Structured Outputs to produce a strict source-linked blueprint with claims, uncertainty,
+  hotspots, source references, and narrative copy. It does not author diorama geometry.
+- The **host compiler** turns three to five existing photo source IDs into an allowlisted diorama with canonical
+  plane slots. Presentation coordinates are labeled generated and never treated as source evidence.
+- A **human grounding desk** blocks build until every uncertain claim is confirmed or preserved and every
+  displayed claim and GPT-authored story field is reviewed against the sources.
+- A **post-Codex language gate** shows the final mechanic, targets or order, prompt, and completion/retry wording;
+  entering records explicit human approval as provenance.
+- The **Codex SDK** works inside an isolated, no-network workspace with an ephemeral home, sanitized environment,
+  and no inherited shell variables. It returns a typed interaction plus a bounded spatial plan: an allowlisted
+  preset and an ordered list of existing photo source IDs.
+- The **host gate** requires the exact existing photo-source set, known hotspot IDs, canonical plane slots,
+  valid references, and a final Zod-valid manifest. These are structural guarantees, not a semantic truth
+  verdict.
 - A responsive **Next.js + React** runtime renders the validated package without evaluating arbitrary generated
-  JavaScript.
-- Two credential-free exhibits provide a deterministic judge path with different mechanics, source drawers,
-  build receipts, keyboard controls, and reduced-motion support.
+  JavaScript, CSS, transforms, or shaders; the spatial presets are host-authored CSS.
+- Two credential-free exhibits use clearly labeled AI-generated fictional photos and synthetic narration to
+  provide a multi-photo CSS-3D memory corridor, a second sequence mechanic, Evidence Lens, source drawers,
+  build receipts, keyboard controls, and reduced-motion support. The public judge experience is a verified
+  replay with a visible fallback trace, not a disguised live model call.
 
 Codex also accelerated the entire engineering workflow. Parallel agents researched idea collisions, built the
-GPT pipeline, authored two mechanics, designed the product UI, generated tests, and repaired browser-QA failures. We kept a
-decision log so judges can distinguish Codex's contribution from the product decisions we made.
+GPT pipeline, authored two mechanics, designed the product UI, generated tests, and repaired browser-QA
+failures. We kept a decision log so judges can distinguish Codex's contribution from the product decisions we
+made.
 
 ## Challenges we ran into
 
@@ -69,7 +88,8 @@ experience is much more specific to GPT-5.6 and Codex.
 
 ## Accomplishments that we're proud of
 
-- Two visibly different playable mechanics generated from one evidence contract.
+- A multi-photo walkable memory space and a second, visibly different mechanic from one evidence contract.
+- Evidence Lens makes the line between generated space and the cited source view visible in one interaction.
 - Source provenance remains available inside the emotional experience instead of living in a separate report.
 - The complete experience works without judge credentials while live GPT-5.6 and Codex modes remain real and
   inspectable.
@@ -82,8 +102,8 @@ The safest way to use a coding agent creatively is not to ask it for unlimited c
 small typed interaction language, strong evidence invariants, and visible build receipts let Codex be genuinely
 inventive while keeping the result portable and testable.
 
-We also learned that provenance does not need to feel like compliance. A photo crop or a few seconds of the
-original voice can be the most emotionally powerful part of the experience.
+We also learned that provenance does not need to feel like compliance. A cited photo view, a reviewed region,
+or a few seconds of the original voice can be the most emotionally powerful part of the experience.
 
 ## What's next
 
@@ -93,4 +113,4 @@ projects could use the same grounding contract for community collections.
 
 ## Built with
 
-GPT-5.6, OpenAI Responses API, Codex SDK, Next.js, React, TypeScript, Zod, Motion, Vitest, Playwright
+GPT-5.6, OpenAI Responses API, Codex SDK, Next.js, React, TypeScript, Zod, CSS 3D, Motion, Vitest, Playwright

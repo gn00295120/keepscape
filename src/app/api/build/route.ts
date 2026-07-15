@@ -1,4 +1,5 @@
 import { buildExhibit, buildRequestSchema } from "@/lib/openai-pipeline";
+import { rejectUnsafeMutation } from "@/lib/api-security";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +19,9 @@ function invalidRequest(issues: Array<{ path: PropertyKey[]; message: string }>)
 }
 
 export async function POST(request: Request) {
+  const unsafeRequest = rejectUnsafeMutation(request);
+  if (unsafeRequest) return unsafeRequest;
+
   const declaredLength = Number(request.headers.get("content-length") ?? "0");
   if (Number.isFinite(declaredLength) && declaredLength > MAX_BODY_BYTES) {
     return Response.json({ ok: false, error: "The exhibit manifest is too large." }, { status: 413 });

@@ -1,11 +1,14 @@
-import { applyHumanConfirmations } from "../src/lib/human-review";
+import { applyHumanConfirmations, recordSourceDeskReview } from "../src/lib/human-review";
 import { buildExhibit } from "../src/lib/openai-pipeline";
 import { nightMarketExhibit } from "../src/lib/sample-exhibits";
 
 async function main() {
-  const approvedManifest = applyHumanConfirmations(
-    nightMarketExhibit,
-    new Set(["claim-bicycle-owner"]),
+  const approvedManifest = recordSourceDeskReview(
+    applyHumanConfirmations(
+      nightMarketExhibit,
+      new Set(["claim-bicycle-owner"]),
+    ),
+    new Set(),
   );
 
   const result = await buildExhibit(
@@ -26,13 +29,14 @@ async function main() {
     agent.name.startsWith("Codex"),
   );
   const codexTests = result.manifest.buildEvidence.tests.filter((test) =>
-    ["Codex interaction compile", "Hotspot allowlist", "Post-build schema"].includes(test.name),
+    ["Codex interaction compile", "Hotspot allowlist", "Spatial plan allowlist", "Post-build schema"].includes(test.name),
   );
+  if (!result.spatialPlan) throw new Error("Live Codex verification returned no spatial plan receipt.");
 
   console.log(
     JSON.stringify(
       {
-        receiptVersion: "1.0",
+        receiptVersion: "1.1",
         capturedAt: new Date().toISOString(),
         product: "Keepscape",
         codexSdkVersion: "0.144.4",
@@ -40,6 +44,7 @@ async function main() {
         model: result.manifest.buildEvidence.model,
         trace: result.trace,
         interaction: result.manifest.scenes[0].interaction,
+        spatialPlan: result.spatialPlan,
         codexAgents,
         codexTests,
         note: "No family media, credentials, prompts from private users, or temporary workspace paths are retained.",

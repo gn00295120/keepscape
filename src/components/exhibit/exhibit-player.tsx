@@ -18,6 +18,7 @@ import type {
 } from "@/lib/exhibit-schema";
 
 import styles from "./exhibit-player.module.css";
+import { SpatialStage } from "./spatial-stage";
 
 export interface ExhibitPlayerProps {
   manifest: ExhibitManifest;
@@ -57,9 +58,30 @@ function formatTime(seconds: number): string {
 }
 
 function sourceTypeLabel(source: Source): string {
-  if (source.kind === "photo") return "Photo region";
-  if (source.kind === "audio") return "Audio timecode";
-  return "Human confirmation";
+  if (source.kind === "photo") {
+    if (!source.region) return "Photo source view";
+    const wholePhoto =
+      source.region.x === 0 && source.region.y === 0 && source.region.width === 1 && source.region.height === 1;
+    return wholePhoto ? "Full photo view" : "Photo region";
+  }
+  if (source.kind === "audio") return source.timeStartSeconds !== undefined ? "Audio timecode" : "Audio source";
+  if (source.humanRole === "story-note") return "Human story note";
+  if (source.humanRole === "confirmation") return "Human confirmation";
+  if (source.humanRole === "uncertainty-preserved") return "Uncertainty decision";
+  return "Human language review";
+}
+
+function humanReviewSeal(source: Source): string {
+  if (source.humanRole === "story-note") {
+    return "Submitted by a human contributor. Claims based on this note still require a source-desk decision.";
+  }
+  if (source.humanRole === "confirmation") {
+    return "Explicitly reviewed and confirmed by a human contributor.";
+  }
+  if (source.humanRole === "uncertainty-preserved") {
+    return "Explicitly reviewed by a human contributor and deliberately kept uncertain — not confirmed as fact.";
+  }
+  return "Generated wording was reviewed by a human contributor. This receipt does not confirm it as fact.";
 }
 
 function claimStatusLabel(claim: GroundedClaim): string {
@@ -122,12 +144,13 @@ function MiniIcon({
 
 function AudioSource({ source }: { source: Source }) {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const hasTimecode = source.timeStartSeconds !== undefined;
   const start = source.timeStartSeconds ?? 0;
   const end = source.timeEndSeconds;
 
   const seekToCitation = () => {
     const player = audioRef.current;
-    if (!player) return;
+    if (!player || !hasTimecode) return;
     if (player.currentTime < start || (end !== undefined && player.currentTime >= end)) {
       player.currentTime = start;
     }
@@ -160,16 +183,23 @@ function AudioSource({ source }: { source: Source }) {
         <p className={styles.unavailable}>Audio file is not included in this archive.</p>
       )}
       <p className={styles.timecode}>
-        Cited segment&nbsp; {formatTime(start)}
-        {end !== undefined ? `–${formatTime(end)}` : "+"}
+        {hasTimecode ? (
+          <>Cited segment&nbsp; {formatTime(start)}{end !== undefined ? `–${formatTime(end)}` : "+"}</>
+        ) : (
+          <>Full original audio · no cited time range</>
+        )}
       </p>
     </div>
   );
 }
 
 function PhotoSource({ source }: { source: Source }) {
+  const [aspectRatio, setAspectRatio] = useState<number>();
+  const wholePhoto = source.region &&
+    source.region.x === 0 && source.region.y === 0 && source.region.width === 1 && source.region.height === 1;
+
   return (
-    <div className={styles.photoEvidence}>
+    <div className={styles.photoEvidence} style={{ aspectRatio }}>
       {source.assetPath ? (
         <Image
           src={source.assetPath}
@@ -177,6 +207,10 @@ function PhotoSource({ source }: { source: Source }) {
           fill
           sizes="(max-width: 760px) 84vw, 360px"
           unoptimized
+          onLoad={(event) => {
+            const { naturalHeight, naturalWidth } = event.currentTarget;
+            if (naturalHeight > 0) setAspectRatio(naturalWidth / naturalHeight);
+          }}
         />
       ) : (
         <div className={styles.missingPhoto}>Archive image withheld</div>
@@ -191,7 +225,7 @@ function PhotoSource({ source }: { source: Source }) {
             height: `${source.region.height * 100}%`,
           }}
         >
-          <span>cited region</span>
+          <span>{wholePhoto ? "cited full photo" : "cited region"}</span>
         </span>
       ) : null}
     </div>
@@ -215,9 +249,9 @@ function SourceCard({ source }: { source: Source }) {
       {source.kind === "photo" ? <PhotoSource source={source} /> : null}
       {source.kind === "audio" ? <AudioSource source={source} /> : null}
       {source.kind === "human" ? (
-        <div className={styles.humanSeal}>
+        <div className={styles.humanSeal} data-human-role={source.humanRole}>
           <span aria-hidden="true"><MiniIcon name="person" /></span>
-          <p>Explicitly reviewed and confirmed by a human contributor.</p>
+          <p>{humanReviewSeal(source)}</p>
         </div>
       ) : null}
       {source.excerpt ? <blockquote>“{source.excerpt}”</blockquote> : null}
@@ -304,6 +338,7 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
   const [progress, setProgress] = useState<Record<string, SceneProgress>>(() => createProgress(manifest));
   const [selectedHotspotId, setSelectedHotspotId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [flatView, setFlatView] = useState(false);
   const [feedback, setFeedback] = useState("Choose a glowing memory marker to begin.");
   const drawerReturnFocusRef = useRef<HTMLElement | null>(null);
 
@@ -346,6 +381,7 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
     setSceneIndex(safeIndex);
     setSelectedHotspotId(null);
     setDrawerOpen(false);
+    setFlatView(false);
     setFeedback("Choose a glowing memory marker to begin.");
   };
 
@@ -415,6 +451,7 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
     setSceneIndex(0);
     setSelectedHotspotId(null);
     setDrawerOpen(false);
+    setFlatView(false);
     setFeedback("The exhibit has been reset. Choose a glowing memory marker to begin.");
   };
 
@@ -465,7 +502,7 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
           </div>
         </div>
         <div className={styles.headerActions}>
-          <span className={styles.truthChip}><MiniIcon name="source" /> Source-grounded</span>
+          <span className={styles.truthChip}><MiniIcon name="source" /> Traceable story</span>
           <button className={styles.resetButton} type="button" onClick={resetExhibit}>
             <MiniIcon name="reset" /> Reset
           </button>
@@ -511,7 +548,14 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
               <h2>{scene.title}</h2>
             </div>
             <div className={styles.sceneTools}>
-              <span className={styles.interpretationBadge}><i /> Generated interpretation</span>
+              <span className={styles.interpretationBadge}>
+                <i /> {scene.spatial ? "Generated spatial interpretation" : "Generated interpretation"}
+              </span>
+              {scene.spatial && flatView ? (
+                <button className={styles.sourceButton} type="button" onClick={() => setFlatView(false)}>
+                  Enter spatial view
+                </button>
+              ) : null}
               <button className={styles.sourceButton} type="button" onClick={openSourceDrawer}>
                 <MiniIcon name="source" /> Sources <span>{activeSources.length}</span>
               </button>
@@ -519,44 +563,55 @@ export function ExhibitPlayer({ manifest, onExit }: ExhibitPlayerProps) {
           </div>
 
           <div className={styles.stageShell}>
-            <div
-              className={styles.stage}
-              data-stage={scene.stage}
-              style={{ backgroundImage: `url(${stageArt[scene.stage]})` }}
-              aria-label={`Interactive illustrated scene: ${scene.title}`}
-            >
-              <div className={styles.stageWash} aria-hidden="true" />
-              <div className={styles.stageCaption}>
-                <p>{scene.narration}</p>
-                <span>Scenery reconstructed from source material</span>
+            {scene.spatial && !flatView ? (
+              <SpatialStage
+                scene={scene}
+                sources={manifest.sources}
+                selectedHotspotId={selectedHotspotId}
+                hotspotStates={Object.fromEntries(scene.hotspots.map((hotspot) => [hotspot.id, hotspotState(hotspot)]))}
+                onHotspot={handleHotspot}
+                onRequestFlat={() => setFlatView(true)}
+              />
+            ) : (
+              <div
+                className={styles.stage}
+                data-stage={scene.stage}
+                style={{ backgroundImage: `url(${stageArt[scene.stage]})` }}
+                aria-label={`Interactive illustrated scene: ${scene.title}`}
+              >
+                <div className={styles.stageWash} aria-hidden="true" />
+                <div className={styles.stageCaption}>
+                  <p>{scene.narration}</p>
+                  <span>Scenery generated around approved source material</span>
+                </div>
+                {scene.hotspots.map((hotspot, index) => {
+                  const state = hotspotState(hotspot);
+                  const selected = selectedHotspotId === hotspot.id;
+                  return (
+                    <button
+                      type="button"
+                      key={hotspot.id}
+                      className={styles.hotspot}
+                      data-state={state}
+                      data-selected={selected}
+                      style={{
+                        left: `${hotspot.xPercent}%`,
+                        top: `${hotspot.yPercent}%`,
+                        "--hotspot-scale": hotspot.scale,
+                        "--hotspot-delay": `${index * 90}ms`,
+                      } as CSSProperties}
+                      onClick={() => handleHotspot(hotspot)}
+                      aria-label={`${hotspot.shortLabel}${state === "complete" ? ", completed" : state === "next" ? ", next in sequence" : ""}`}
+                      aria-pressed={selected}
+                    >
+                      <span className={styles.hotspotHalo} aria-hidden="true" />
+                      <span className={styles.hotspotIcon}>{state === "complete" ? <MiniIcon name="check" /> : <MiniIcon name={hotspot.icon} />}</span>
+                      <span className={styles.hotspotLabel}>{hotspot.shortLabel}</span>
+                    </button>
+                  );
+                })}
               </div>
-              {scene.hotspots.map((hotspot, index) => {
-                const state = hotspotState(hotspot);
-                const selected = selectedHotspotId === hotspot.id;
-                return (
-                  <button
-                    type="button"
-                    key={hotspot.id}
-                    className={styles.hotspot}
-                    data-state={state}
-                    data-selected={selected}
-                    style={{
-                      left: `${hotspot.xPercent}%`,
-                      top: `${hotspot.yPercent}%`,
-                      "--hotspot-scale": hotspot.scale,
-                      "--hotspot-delay": `${index * 90}ms`,
-                    } as CSSProperties}
-                    onClick={() => handleHotspot(hotspot)}
-                    aria-label={`${hotspot.shortLabel}${state === "complete" ? ", completed" : state === "next" ? ", next in sequence" : ""}`}
-                    aria-pressed={selected}
-                  >
-                    <span className={styles.hotspotHalo} aria-hidden="true" />
-                    <span className={styles.hotspotIcon}>{state === "complete" ? <MiniIcon name="check" /> : <MiniIcon name={hotspot.icon} />}</span>
-                    <span className={styles.hotspotLabel}>{hotspot.shortLabel}</span>
-                  </button>
-                );
-              })}
-            </div>
+            )}
 
             <section className={styles.missionCard} aria-label="Scene activity">
               <div className={styles.missionTopline}>

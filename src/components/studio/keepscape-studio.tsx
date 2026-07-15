@@ -13,7 +13,11 @@ import {
 import { ExhibitPlayer } from "@/components/exhibit/exhibit-player";
 import { sampleExhibits } from "@/lib/sample-exhibits";
 import type { ExhibitManifest } from "@/lib/exhibit-schema";
-import { applyHumanConfirmations } from "@/lib/human-review";
+import {
+  applyHumanConfirmations,
+  recordInteractionCopyReview,
+  recordSourceDeskReview,
+} from "@/lib/human-review";
 
 import { BuildTrail } from "./build-trail";
 import { SourceDesk } from "./source-desk";
@@ -43,6 +47,31 @@ function MiniatureScene({ manifest, index }: { manifest: ExhibitManifest; index:
     "--mini-glow": manifest.palette.glow,
   } as CSSProperties;
 
+  if (scene.spatial) {
+    const sourcesById = new Map(manifest.sources.map((source) => [source.id, source]));
+    return (
+      <div className="mini-scene mini-scene--spatial" style={style} aria-hidden="true">
+        <div className="mini-spatial-world">
+          {scene.spatial.planes.map((plane) => {
+            const source = sourcesById.get(plane.sourceId);
+            return (
+              <span
+                className="mini-spatial-plane"
+                data-slot={plane.slot}
+                key={plane.id}
+                style={{ backgroundImage: source?.assetPath ? `url(${source.assetPath})` : undefined }}
+              />
+            );
+          })}
+          <span className="mini-spatial-floor" />
+        </div>
+        <span className="mini-spatial-reticle"><i /><i /><i /></span>
+        <span className="mini-spatial-note">3 photo views · generated spatial interpretation</span>
+        <span className="mini-scene__edition">ARCHIVE {String(index + 1).padStart(2, "0")}</span>
+      </div>
+    );
+  }
+
   return (
     <div className={`mini-scene mini-scene--${scene.stage}`} style={style} aria-hidden="true">
       <span className="mini-scene__moon" />
@@ -53,6 +82,72 @@ function MiniatureScene({ manifest, index }: { manifest: ExhibitManifest; index:
       <span className="mini-scene__hotspot mini-scene__hotspot--two" />
       <span className="mini-scene__edition">ARCHIVE {String(index + 1).padStart(2, "0")}</span>
     </div>
+  );
+}
+
+function HeroMemoryCorridor({ manifest }: { manifest: ExhibitManifest }) {
+  const scene = manifest.scenes[0];
+  if (!scene.spatial) return null;
+
+  const sourcesById = new Map(manifest.sources.map((source) => [source.id, source]));
+  const anchoredHotspot = scene.hotspots.find((hotspot) => hotspot.spatialAnchor);
+  const anchoredPlaneId = anchoredHotspot?.spatialAnchor?.planeId;
+
+  return (
+    <figure className="hero-memory" aria-label="Three source photographs arranged as a generated memory corridor">
+      <figcaption className="hero-memory__caption">
+        <span>Fictional demo · AI-generated source photos</span>
+        <strong>Three photographs become somewhere you can enter.</strong>
+      </figcaption>
+
+      <div className="hero-memory__viewport">
+        <div className="hero-memory__world" aria-hidden="true">
+          {scene.spatial.planes.slice(0, 3).map((plane) => {
+            const source = sourcesById.get(plane.sourceId);
+            const selected = plane.id === anchoredPlaneId;
+            const region = selected ? source?.region : undefined;
+            const regionStyle = region
+              ? ({
+                  "--region-x": `${region.x * 100}%`,
+                  "--region-y": `${region.y * 100}%`,
+                  "--region-width": `${region.width * 100}%`,
+                  "--region-height": `${region.height * 100}%`,
+                } as CSSProperties)
+              : undefined;
+
+            return (
+              <span
+                className="hero-memory__plane"
+                data-selected={selected}
+                data-slot={plane.slot}
+                key={plane.id}
+                style={{ backgroundImage: source?.assetPath ? `url(${source.assetPath})` : undefined }}
+              >
+                {region ? (
+                  <i className="hero-memory__region" style={regionStyle}>
+                    <b>source region</b>
+                  </i>
+                ) : null}
+              </span>
+            );
+          })}
+          <span className="hero-memory__floor" />
+        </div>
+        <span className="hero-memory__tether" aria-hidden="true" />
+        <span className="hero-memory__reticle" aria-hidden="true" />
+        <div className="hero-memory__receipt">
+          <span>Evidence 01 · painted lantern</span>
+          <strong>Demo detail is traceable.</strong>
+          <small>Placement, depth and motion are interpretation.</small>
+        </div>
+      </div>
+
+      <div className="hero-memory__meta" aria-label="Keepscape spatial recipe">
+        <span><b>03</b> labeled demo photographs</span>
+        <i aria-hidden="true">→</i>
+        <span><b>01</b> walkable memory</span>
+      </div>
+    </figure>
   );
 }
 
@@ -68,6 +163,7 @@ export function KeepscapeStudio() {
   const [storyTitle, setStoryTitle] = useState("A family keepsake");
   const [dedication, setDedication] = useState("");
   const [analysisConsent, setAnalysisConsent] = useState(false);
+  const [liveAnalysisAvailable, setLiveAnalysisAvailable] = useState<boolean | null>(null);
   const [uploadError, setUploadError] = useState<string>();
   const [isMapping, setIsMapping] = useState(false);
   const workspaceRef = useRef<HTMLElement>(null);
@@ -81,10 +177,29 @@ export function KeepscapeStudio() {
     };
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    fetch("/api/blueprint", { cache: "no-store" })
+      .then((response) => response.json())
+      .then((result: { liveAnalysisAvailable?: boolean }) => {
+        if (!active) return;
+        const available = result.liveAnalysisAvailable === true;
+        setLiveAnalysisAvailable(available);
+        if (!available) setAnalysisConsent(false);
+      })
+      .catch(() => {
+        if (active) {
+          setLiveAnalysisAvailable(false);
+          setAnalysisConsent(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const imageFiles = imagePreviews.map((preview) => preview.file);
   const uploadReady = imageFiles.length >= 3 && imageFiles.length <= 5;
-  const jumpToWorkspace = () => workspaceRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-
   function transition(nextStage: StudioStage) {
     setStage(nextStage);
     window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
@@ -137,7 +252,7 @@ export function KeepscapeStudio() {
 
     try {
       if (analysisConsent && transcript.trim().length < 20) {
-        throw new Error("Add at least 20 characters of transcript so the live story map has words to ground.");
+        throw new Error("Add at least 20 characters of transcript or story note so the live map has words to ground.");
       }
       const photos = analysisConsent
         ? await Promise.all(
@@ -161,6 +276,7 @@ export function KeepscapeStudio() {
             title: storyTitle.trim() || "A family keepsake",
             dedication: dedication.trim() || undefined,
             transcript: transcript.trim(),
+            hasOriginalAudio: Boolean(audioFile),
             photos,
           }
         : { live: false };
@@ -187,7 +303,7 @@ export function KeepscapeStudio() {
                   kind: "audio" as const,
                   label: `${source.label} · full original recording`,
                   assetPath: audioUrlRef.current,
-                  timeStartSeconds: 0,
+                  timeStartSeconds: undefined,
                   timeEndSeconds: undefined,
                 }
               : source,
@@ -200,7 +316,7 @@ export function KeepscapeStudio() {
       setProvenanceNotice(
         result.mode === "live"
           ? "Live blueprint: with your consent, GPT-5.6 analyzed the selected photos and text for this request. Keepscape did not persist them. Audio stayed on this device. Confirm every uncertain detail before building."
-          : `Demo fallback: ${result.reason ?? "live credentials were unavailable"}. Your private files were not uploaded or represented as analyzed; this desk now shows a bundled source-grounded exhibit.`,
+          : `Demo fallback: ${result.reason ?? "live credentials were unavailable"}. Your selected files were not retained or represented as analyzed; this desk now shows a bundled source-grounded exhibit.`,
       );
       transition("review");
     } catch (caught) {
@@ -246,7 +362,7 @@ export function KeepscapeStudio() {
         </button>
         <div className="trust-line">
           <LockKeyhole size={14} aria-hidden="true" />
-          Source-grounded · no cloned voices or likenesses
+          Traceable story · generated space clearly labeled
         </div>
       </header>
 
@@ -258,25 +374,19 @@ export function KeepscapeStudio() {
               <span>EST. WHEN YOU REMEMBER</span>
             </div>
             <div className="hero__title-block">
-              <span className="eyebrow">Photos hold the scene. A voice holds the way back.</span>
+              <span className="eyebrow">A generated space. A traceable story.</span>
               <h1 id="hero-title">Walk into a true story.</h1>
             </div>
             <div className="hero__intro">
               <p>
-                Keepscape turns real family source material into a small place you can explore — without
-                inventing the people who were there.
+                Keepscape turns three to five real family photos and original voice into a walkable memory
+                space — without inventing the people who were there.
               </p>
-              <button className="button button--ink" type="button" onClick={jumpToWorkspace}>
-                Open the memory desk <ArrowRight size={17} aria-hidden="true" />
+              <button className="button button--ink" type="button" onClick={() => chooseExhibit(sampleExhibits[0])}>
+                Enter Lantern Lane <ArrowRight size={17} aria-hidden="true" />
               </button>
             </div>
-            <div className="hero__recipe" aria-label="Keepscape recipe">
-              <span>03–05</span><p>photographs</p>
-              <i aria-hidden="true">+</i>
-              <span>01</span><p>spoken story</p>
-              <i aria-hidden="true">→</i>
-              <span>∞</span><p>ways back in</p>
-            </div>
+            <HeroMemoryCorridor manifest={sampleExhibits[0]} />
           </section>
 
           <main className="archive-workspace" ref={workspaceRef}>
@@ -296,7 +406,11 @@ export function KeepscapeStudio() {
                   <article className="story-card" key={sample.slug}>
                     <MiniatureScene manifest={sample} index={index} />
                     <div className="story-card__copy">
-                      <span className="story-card__eyebrow">Playable archive · {sample.scenes[0].interaction.kind}</span>
+                      <span className="story-card__eyebrow">
+                        {sample.scenes[0].spatial
+                          ? "Fictional demo · AI-generated source photos · walkable space"
+                          : `Fictional demo · AI-generated source photo · ${sample.scenes[0].interaction.kind}`}
+                      </span>
                       <h3>{sample.title}</h3>
                       <p>{sample.subtitle}</p>
                       <small>{sample.dedication}</small>
@@ -313,7 +427,7 @@ export function KeepscapeStudio() {
                   <span className="ticket-number">NEW ARCHIVE</span>
                   <Sparkles size={20} aria-hidden="true" />
                   <h3 id="new-archive-title">Begin with your own</h3>
-                  <p>Stage three to five photos. Add an original recording and transcript when you have them.</p>
+                  <p>Map three to five photos into a guided spatial story. Add original voice when you have it.</p>
                 </div>
 
                 <div className="upload-drop" onDragOver={(event) => event.preventDefault()} onDrop={handleDrop}>
@@ -398,20 +512,27 @@ export function KeepscapeStudio() {
 
                 <div className="upload-privacy">
                   <LockKeyhole size={14} aria-hidden="true" />
-                  Audio stays on this device. Live photo analysis is opt-in and is never persisted by Keepscape.
+                  {liveAnalysisAvailable
+                    ? "Audio stays on this device. Live photo analysis is opt-in and is never persisted by Keepscape."
+                    : liveAnalysisAvailable === false
+                      ? "Public judge mode keeps selected media on this device and uses the labeled replay. Configure an OpenAI key locally for opt-in analysis."
+                      : "Checking whether opt-in live analysis is available…"}
                 </div>
                 <label className="consent-field">
                   <input
                     type="checkbox"
                     checked={analysisConsent}
+                    disabled={liveAnalysisAvailable !== true}
                     onChange={(event) => setAnalysisConsent(event.target.checked)}
                   />
                   <span>
-                    Send selected photos and transcript to OpenAI for this analysis; Keepscape does not persist them.
+                    {liveAnalysisAvailable
+                      ? "Send selected photos and story text to OpenAI for this analysis; Keepscape does not persist them. Original audio stays on this device."
+                      : "Live OpenAI analysis is unavailable on this public judge deployment."}
                   </span>
                 </label>
                 {analysisConsent && transcript.trim().length < 20 && (
-                  <p className="field-hint">Live analysis needs at least 20 characters of transcript.</p>
+                  <p className="field-hint">Live analysis needs at least 20 characters of transcript or story note.</p>
                 )}
                 {uploadError && <p className="form-error" role="alert">{uploadError}</p>}
                 <button
@@ -457,7 +578,9 @@ export function KeepscapeStudio() {
                 setPreservedClaimIds((ids) => new Set(ids).add(claimId));
               }}
               onApprove={() => {
-                setManifest((current) => applyHumanConfirmations(current, confirmedClaimIds));
+                setManifest((current) =>
+                  recordSourceDeskReview(applyHumanConfirmations(current, confirmedClaimIds), preservedClaimIds),
+                );
                 transition("build");
               }}
               onBack={() => transition("choose")}
@@ -468,7 +591,10 @@ export function KeepscapeStudio() {
               manifest={manifest}
               onBack={() => transition("review")}
               onBuild={buildExhibit}
-              onLaunch={() => transition("play")}
+              onLaunch={() => {
+                setManifest(recordInteractionCopyReview(manifest));
+                transition("play");
+              }}
             />
           )}
         </main>

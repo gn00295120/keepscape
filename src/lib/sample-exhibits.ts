@@ -10,10 +10,10 @@ export const nightMarketExhibit: ExhibitManifest = exhibitManifestSchema.parse({
   id: "exhibit-night-market-1998",
   slug: "lantern-lane-1998",
   title: "Lantern Lane, 1998",
-  subtitle: "Collect the three lantern details preserved in one summer photograph.",
+  subtitle: "Walk between three summer photographs and collect the lantern details each one preserved.",
   dedication: "For every ordinary evening that became family folklore.",
   truthNote:
-    "Built-in demonstration made from synthetic source material. Facts are linked to the illustrated source photograph, timestamped demo narration, or an explicit demo confirmation; atmospheric scenery is interpretation.",
+    "Built-in demonstration made from three AI-generated fictional demo photos, timestamped synthetic narration, and an explicit demo confirmation. Their arrangement in space and all atmospheric scenery are interpretation.",
   palette: {
     ink: "#27150f",
     paper: "#fff1cf",
@@ -24,26 +24,26 @@ export const nightMarketExhibit: ExhibitManifest = exhibitManifestSchema.parse({
     {
       id: "night-photo-left-lantern",
       kind: "photo",
-      label: "Source photograph · left lantern",
-      assetPath: "/samples/night-market-source.svg",
-      capturedAt: "1998-08",
-      region: { x: 0.05, y: 0.08, width: 0.25, height: 0.48 },
+      label: "AI-generated fictional demo photo · left view",
+      assetPath: "/samples/night-market-left-view.webp",
+      capturedAt: "Fictional archive setting · August 1998",
+      region: { x: 0.34, y: 0.07, width: 0.18, height: 0.31 },
     },
     {
       id: "night-photo-center-lantern",
       kind: "photo",
-      label: "Source photograph · center lantern",
-      assetPath: "/samples/night-market-source.svg",
-      capturedAt: "1998-08",
+      label: "AI-generated fictional demo photo · center view",
+      assetPath: "/samples/night-market-source-photo.webp",
+      capturedAt: "Fictional archive setting · August 1998",
       region: { x: 0.36, y: 0.05, width: 0.26, height: 0.5 },
     },
     {
       id: "night-photo-right-lantern",
       kind: "photo",
-      label: "Source photograph · right lantern",
-      assetPath: "/samples/night-market-source.svg",
-      capturedAt: "1998-08",
-      region: { x: 0.68, y: 0.1, width: 0.25, height: 0.46 },
+      label: "AI-generated fictional demo photo · right view",
+      assetPath: "/samples/night-market-right-view.webp",
+      capturedAt: "Fictional archive setting · August 1998",
+      region: { x: 0.57, y: 0.06, width: 0.17, height: 0.32 },
     },
     {
       id: "night-audio-lantern",
@@ -75,6 +75,8 @@ export const nightMarketExhibit: ExhibitManifest = exhibitManifestSchema.parse({
     {
       id: "night-human-date",
       kind: "human",
+      humanRole: "confirmation",
+      confirmedClaimId: "claim-night-date",
       label: "Demo storyteller confirmation",
       capturedAt: "1998-08",
       excerpt: "For this fictional demo, the storyteller confirms the envelope was marked August 1998.",
@@ -89,19 +91,19 @@ export const nightMarketExhibit: ExhibitManifest = exhibitManifestSchema.parse({
     },
     {
       id: "claim-left-lantern",
-      text: "A painted lantern appears at the left edge of the source photograph.",
+      text: "A painted lantern appears in the left-view source photograph.",
       status: "source-backed",
       sourceIds: ["night-photo-left-lantern", "night-audio-lantern"],
     },
     {
       id: "claim-center-lantern",
-      text: "A tasseled lantern appears above the center of the lane.",
+      text: "A tasseled lantern appears in the center-view source photograph.",
       status: "source-backed",
       sourceIds: ["night-photo-center-lantern", "night-audio-lantern"],
     },
     {
       id: "claim-right-lantern",
-      text: "A pale lantern appears on the right side of the photograph.",
+      text: "A pale lantern appears in the right-view source photograph.",
       status: "source-backed",
       sourceIds: ["night-photo-right-lantern", "night-audio-lantern"],
     },
@@ -127,10 +129,10 @@ export const nightMarketExhibit: ExhibitManifest = exhibitManifestSchema.parse({
   scenes: [
     {
       id: "scene-lantern-lane",
-      title: "Find the light that survived the photograph",
-      eyebrow: "August 1998 · source-grounded demo",
+      title: "Three photographs remembered one night",
+      eyebrow: "August 1998 · fictional source-grounded demo",
       narration:
-        "The illustrated lane is an interpretation arranged around five verifiable details. Collect the three lanterns in any order; the ticket and bell open additional source cards.",
+        "Three summer photographs remember one night from different angles. Walk between them, collect the three lanterns, and use Evidence Lens to see where memory ends and interpretation begins.",
       stage: "lantern-lane",
       sourceIds: [
         "night-photo-left-lantern",
@@ -141,6 +143,29 @@ export const nightMarketExhibit: ExhibitManifest = exhibitManifestSchema.parse({
         "night-audio-bell",
         "night-human-date",
       ],
+      spatial: {
+        kind: "photo-diorama",
+        preset: "memory-corridor",
+        disclaimer:
+          "Generated spatial interpretation: the three source photos support the cited lantern details, not their relative depth, distance, or placement.",
+        planes: [
+          {
+            id: "plane-night-left-view",
+            sourceId: "night-photo-left-lantern",
+            slot: "near-left",
+          },
+          {
+            id: "plane-night-center-view",
+            sourceId: "night-photo-center-lantern",
+            slot: "far-center",
+          },
+          {
+            id: "plane-night-right-view",
+            sourceId: "night-photo-right-lantern",
+            slot: "near-right",
+          },
+        ],
+      },
       hotspots: [
         {
           id: "hotspot-painted-lantern",
@@ -154,6 +179,7 @@ export const nightMarketExhibit: ExhibitManifest = exhibitManifestSchema.parse({
           claimIds: ["claim-left-lantern", "claim-night-date"],
           sourceIds: ["night-photo-left-lantern", "night-audio-lantern", "night-human-date"],
           interpretation: "The surrounding awning and glow are generated atmosphere, not documentary fact.",
+          spatialAnchor: { planeId: "plane-night-left-view", u: 0.43, v: 0.2 },
         },
         {
           id: "hotspot-tasseled-lantern",
@@ -167,6 +193,7 @@ export const nightMarketExhibit: ExhibitManifest = exhibitManifestSchema.parse({
           claimIds: ["claim-center-lantern"],
           sourceIds: ["night-photo-center-lantern", "night-audio-lantern"],
           interpretation: "The animated sway is an interpretive motion cue.",
+          spatialAnchor: { planeId: "plane-night-center-view", u: 0.49, v: 0.24 },
         },
         {
           id: "hotspot-pale-lantern",
@@ -180,6 +207,7 @@ export const nightMarketExhibit: ExhibitManifest = exhibitManifestSchema.parse({
           claimIds: ["claim-right-lantern"],
           sourceIds: ["night-photo-right-lantern", "night-audio-lantern"],
           interpretation: "The moonlike bloom is generated scenery.",
+          spatialAnchor: { planeId: "plane-night-right-view", u: 0.65, v: 0.2 },
         },
         {
           id: "hotspot-paper-ticket",
@@ -210,7 +238,7 @@ export const nightMarketExhibit: ExhibitManifest = exhibitManifestSchema.parse({
       ],
       interaction: {
         kind: "collect",
-        prompt: "Collect the three lanterns preserved by the source photograph.",
+        prompt: "Collect the three lanterns preserved across the source photographs.",
         targetHotspotIds: ["hotspot-painted-lantern", "hotspot-tasseled-lantern", "hotspot-pale-lantern"],
         completionMessage: "Three lights, three citations. The lane is complete without adding a new fact.",
       },
@@ -254,7 +282,7 @@ export const bicycleRepairExhibit: ExhibitManifest = exhibitManifestSchema.parse
   subtitle: "Rebuild a remembered bicycle ritual in the order the storyteller taught it.",
   dedication: "For the hands that taught by doing.",
   truthNote:
-    "Built-in demonstration made from synthetic source material. The repair order is grounded in timestamped demo narration and illustrated photo regions. Bench scenery and motion are labeled interpretation.",
+    "Built-in demonstration made from an AI-generated fictional demo photo and timestamped synthetic narration. The repair order is source-grounded; bench scenery and motion are labeled interpretation.",
   palette: {
     ink: "#132821",
     paper: "#f2eedf",
@@ -265,23 +293,23 @@ export const bicycleRepairExhibit: ExhibitManifest = exhibitManifestSchema.parse
     {
       id: "repair-photo-bicycle",
       kind: "photo",
-      label: "Source photograph · bicycle frame",
-      assetPath: "/samples/repair-bench-source.svg",
-      region: { x: 0.06, y: 0.12, width: 0.62, height: 0.75 },
+      label: "AI-generated fictional demo photo · bicycle frame",
+      assetPath: "/samples/repair-bench-source-photo.webp",
+      region: { x: 0, y: 0.04, width: 0.73, height: 0.8 },
     },
     {
       id: "repair-photo-wrench",
       kind: "photo",
-      label: "Source photograph · small wrench",
-      assetPath: "/samples/repair-bench-source.svg",
-      region: { x: 0.65, y: 0.5, width: 0.24, height: 0.22 },
+      label: "AI-generated fictional demo photo · small wrench",
+      assetPath: "/samples/repair-bench-source-photo.webp",
+      region: { x: 0.75, y: 0.78, width: 0.2, height: 0.17 },
     },
     {
       id: "repair-photo-bell",
       kind: "photo",
-      label: "Source photograph · handlebar bell",
-      assetPath: "/samples/repair-bench-source.svg",
-      region: { x: 0.48, y: 0.08, width: 0.2, height: 0.2 },
+      label: "AI-generated fictional demo photo · handlebar bell",
+      assetPath: "/samples/repair-bench-source-photo.webp",
+      region: { x: 0.57, y: 0.48, width: 0.12, height: 0.2 },
     },
     {
       id: "repair-audio-tire",

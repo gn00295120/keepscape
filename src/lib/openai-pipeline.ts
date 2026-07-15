@@ -3,11 +3,23 @@ import { zodTextFormat } from "openai/helpers/zod";
 import { z } from "zod";
 
 import { exhibitManifestSchema, type ExhibitManifest, type Source } from "@/lib/exhibit-schema";
+import { GENERATED_COPY_REVIEW_SOURCE_ID, preservedUncertaintySourceId } from "@/lib/human-review";
 import { getSampleExhibit, nightMarketExhibit } from "@/lib/sample-exhibits";
+import { createPhotoDiorama, createSpatialAnchor } from "@/lib/spatial-layout";
 
 const MAX_TRANSCRIPT_CHARACTERS = 12_000;
 const MAX_DATA_URL_CHARACTERS = 7_000_000;
 const MAX_TOTAL_IMAGE_CHARACTERS = 24_000_000;
+
+const uniqueBlueprintHotspotIds = z
+  .array(z.string().min(1).max(80))
+  .min(3)
+  .max(6)
+  .superRefine((ids, context) => {
+    if (new Set(ids).size !== ids.length) {
+      context.addIssue({ code: "custom", message: "Interaction hotspot IDs must be unique." });
+    }
+  });
 
 const inlineImageSchema = z
   .string()
@@ -31,6 +43,7 @@ export const blueprintRequestSchema = z
     transcript: z.string().trim().min(20).max(MAX_TRANSCRIPT_CHARACTERS).optional(),
     photos: z.array(blueprintPhotoSchema).max(5).default([]),
     dedication: z.string().trim().min(1).max(180).optional(),
+    hasOriginalAudio: z.boolean().default(false),
     sampleSlug: z.string().regex(/^[a-z0-9-]+$/).max(100).optional(),
     live: z.boolean().default(true),
   })
@@ -44,7 +57,14 @@ export const blueprintRequestSchema = z
       context.addIssue({
         code: "custom",
         path: ["transcript"],
-        message: "A transcript is required for a custom exhibit.",
+        message: "A transcript or story note is required for a custom exhibit.",
+      });
+    }
+    if (isCustom && value.photos.length < 3) {
+      context.addIssue({
+        code: "custom",
+        path: ["photos"],
+        message: "A custom exhibit requires three to five photos.",
       });
     }
 
@@ -67,6 +87,13 @@ export const blueprintRequestSchema = z
         });
       }
       ids.add(photo.id);
+      if (isCustom && value.live && photo.dataUrl === undefined) {
+        context.addIssue({
+          code: "custom",
+          path: ["photos", index, "dataUrl"],
+          message: "Live photo analysis requires the actual image data.",
+        });
+      }
     }
   });
 
@@ -76,7 +103,40 @@ export const buildRequestSchema = z
     sampleSlug: z.string().regex(/^[a-z0-9-]+$/).max(100).optional(),
     live: z.boolean().default(false),
   })
-  .strict();
+  .strict()
+  .superRefine((value, context) => {
+    if (!value.live) return;
+    if (!value.manifest) {
+      context.addIssue({
+        code: "custom",
+        path: ["manifest"],
+        message: "A live build requires a source-desk-reviewed manifest.",
+      });
+      return;
+    }
+    const sourceById = new Map(value.manifest.sources.map((source) => [source.id, source]));
+    const languageReview = sourceById.get(GENERATED_COPY_REVIEW_SOURCE_ID);
+    if (languageReview?.kind !== "human" || languageReview.humanRole !== "language-review") {
+      context.addIssue({
+        code: "custom",
+        path: ["manifest", "sources"],
+        message: "Review the displayed generated story copy at the source desk before a live build.",
+      });
+    }
+    for (const claim of value.manifest.claims) {
+      const preservation = sourceById.get(preservedUncertaintySourceId(claim.id));
+      if (
+        claim.status === "uncertain" &&
+        (preservation?.kind !== "human" || preservation.humanRole !== "uncertainty-preserved")
+      ) {
+        context.addIssue({
+          code: "custom",
+          path: ["manifest", "claims"],
+          message: `Uncertain claim ${claim.id} requires an explicit preserved-uncertainty receipt before build.`,
+        });
+      }
+    }
+  });
 
 /**
  * This is deliberately separate from ExhibitManifest. OpenAI Structured Outputs
@@ -130,7 +190,7 @@ export const exhibitBlueprintSchema = z
       .object({
         kind: z.enum(["collect", "sequence"]),
         prompt: z.string().min(1).max(220),
-        hotspotIds: z.array(z.string().min(1).max(80)).min(3).max(6),
+        hotspotIds: uniqueBlueprintHotspotIds,
         completionMessage: z.string().min(1).max(280),
         retryMessage: z.string().min(1).max(280),
       })
@@ -154,6 +214,11 @@ export type PipelineResult = {
   trace: PipelineTraceEntry[];
   reason?: string;
   blueprint?: ExhibitBlueprint;
+  spatialPlan?: {
+    enabled: boolean;
+    preset: "memory-corridor" | "gallery-arc" | "tabletop";
+    orderedPhotoSourceIds: string[];
+  };
 };
 
 type PipelineEnvironment = {
@@ -186,39 +251,75 @@ function buildInputSources(request: BlueprintRequest & { title: string; transcri
     kind: "photo",
     label: photo.label,
     assetPath: photo.dataUrl,
+    // Live GPT output does not claim an object-level crop. The whole image is
+    // the conservative evidence region and is labeled as a full source view.
     region: { x: 0, y: 0, width: 1, height: 1 },
   }));
 
+  const storySource: Source = request.hasOriginalAudio
+    ? {
+        id: "story-transcript",
+        kind: "audio",
+        label: "Storyteller-provided transcript · original recording available locally",
+        excerpt: request.transcript,
+      }
+    : {
+        id: "story-transcript",
+        kind: "human",
+        humanRole: "story-note",
+        label: "Storyteller-provided story note · awaits source-desk decision",
+        excerpt: request.transcript,
+      };
+
   return [
     ...photoSources,
-    {
-      id: "story-transcript",
-      kind: "audio",
-      label: "Storyteller-provided transcript · starts at 00:00",
-      timeStartSeconds: 0,
-      excerpt: request.transcript,
-    },
+    storySource,
     {
       id: "human-title",
       kind: "human",
-      label: "Storyteller title confirmation",
+      humanRole: "story-note",
+      label: "Storyteller-provided title",
       excerpt: request.title,
     },
     {
       id: "human-story-confirmation",
       kind: "human",
-      label: "Storyteller submission confirmation",
-      excerpt: "The storyteller supplied this transcript and selected material for this exhibit.",
+      humanRole: "story-note",
+      label: "Storyteller submission note",
+      excerpt: "The storyteller supplied this story text and selected material for this exhibit.",
     },
   ];
 }
 
-function compileBlueprint(
+export function compileBlueprint(
   blueprint: ExhibitBlueprint,
   request: BlueprintRequest & { title: string; transcript: string },
+  model = "gpt-5.6",
 ): ExhibitManifest {
   const sources = buildInputSources(request);
-  const slug = slugify(blueprint.title);
+  const spatial = createPhotoDiorama(
+    sources.filter((source) => source.kind === "photo").map((source) => source.id),
+  );
+  const spatialPlaneBySourceId = new Map(
+    spatial?.planes.map((plane) => [plane.sourceId, plane]) ?? [],
+  );
+  const sourceById = new Map(sources.map((source) => [source.id, source]));
+  const claims = blueprint.claims.map((claim) => {
+    if (claim.status !== "source-backed") return claim;
+    const referencedSources = claim.sourceIds.flatMap((sourceId) => {
+      const source = sourceById.get(sourceId);
+      return source ? [source] : [];
+    });
+    const hasLocatedEvidence = referencedSources.some(
+      (source) =>
+        (source.kind === "photo" && source.region !== undefined) ||
+        (source.kind === "audio" && source.timeStartSeconds !== undefined),
+    );
+    return !hasLocatedEvidence
+      ? { ...claim, status: "uncertain" as const }
+      : claim;
+  });
+  const slug = slugify(request.title);
   const interaction =
     blueprint.interaction.kind === "collect"
       ? {
@@ -239,7 +340,7 @@ function compileBlueprint(
     schemaVersion: "1.0",
     id: `exhibit-${slug}`,
     slug,
-    title: blueprint.title,
+    title: request.title,
     subtitle: blueprint.subtitle,
     dedication: request.dedication ?? blueprint.dedication,
     truthNote: blueprint.truthNote,
@@ -248,7 +349,7 @@ function compileBlueprint(
         ? { ink: "#132821", paper: "#f2eedf", accent: "#df6b35", glow: "#b8db90" }
         : { ink: "#27150f", paper: "#fff1cf", accent: "#df4b2f", glow: "#ffc85c" },
     sources,
-    claims: blueprint.claims,
+    claims,
     scenes: [
       {
         id: `scene-${slug}`,
@@ -257,17 +358,28 @@ function compileBlueprint(
         narration: blueprint.narration,
         stage: blueprint.stage,
         sourceIds: sources.map((source) => source.id),
-        hotspots: blueprint.hotspots,
+        hotspots: blueprint.hotspots.map((hotspot) => {
+          const photoPlane = hotspot.sourceIds
+            .map((sourceId) => spatialPlaneBySourceId.get(sourceId))
+            .find((plane) => plane !== undefined);
+          return photoPlane
+            ? {
+                ...hotspot,
+                spatialAnchor: createSpatialAnchor(photoPlane.id, hotspot.xPercent, hotspot.yPercent),
+              }
+            : hotspot;
+        }),
         interaction,
+        ...(spatial ? { spatial } : {}),
       },
     ],
     buildEvidence: {
-      model: process.env.OPENAI_MODEL ?? "gpt-5.6",
+      model,
       agents: [
         {
           name: "GPT-5.6 story cartographer",
-          role: "Extracted a strict source-linked exhibit blueprint from transcript and photo evidence.",
-          result: `${blueprint.claims.length} claims and ${blueprint.hotspots.length} interactions proposed.`,
+          role: "Extracted a strict source-linked exhibit blueprint from story text and photo evidence.",
+          result: `${blueprint.claims.length} claims, ${blueprint.hotspots.length} hotspots, and 1 interaction proposed.`,
           status: "reviewed",
         },
         {
@@ -292,17 +404,20 @@ function fallbackManifest(request: BlueprintRequest): ExhibitManifest {
   return getSampleExhibit(/bike|bicycle|repair|wheel|tire|chain/.test(hint) ? "four-moves-at-the-repair-bench" : undefined);
 }
 
-const BLUEPRINT_INSTRUCTIONS = `You are the source-grounding stage of Keepscape. Turn supplied family material into one compact playable exhibit blueprint.
+export const BLUEPRINT_INSTRUCTIONS = `You are the source-grounding stage of Keepscape. Turn supplied family material into one compact playable exhibit blueprint.
 
 Non-negotiable truth rules:
 - Do not invent a person, relationship, place, object, quote, date, or event.
 - Every factual claim and hotspot must cite one or more IDs from AVAILABLE SOURCES.
-- A photo supports only what is visible. A transcript supports only what it says.
+- A photo supports only what is visible. A transcript or story note supports only what it says.
+- A story note without an original recording is a human source, never audio evidence or a fabricated timecode.
+- Never infer sensitive identity attributes, relationships, diagnoses, or private events from appearance; omit them even when plausible.
 - Use status "uncertain" when the material is ambiguous.
 - Never emit "human-confirmed". Only an explicit choice in the source desk can create that state.
 - interpretation must plainly label generated scenery, placement, animation, or connective language.
+- xPercent and yPercent are generated presentation coordinates only. They are never evidence of where an object appears in a source photo or where photos were relative to each other.
 - Never clone a voice, synthesize a deceased person's likeness, or imply that generated scenery is archival.
-- Produce 3–6 hotspots and one interaction. Choose collect for independent details; choose sequence only when the transcript establishes an order.
+- Produce 3–6 hotspots and one interaction. Choose collect for independent details; choose sequence only when the supplied story text establishes an order.
 - hotspotIds must reference hotspot IDs; claimIds must reference claim IDs.
 - Keep the supplied title unless a tiny grammatical correction is essential.
 `;
@@ -319,7 +434,7 @@ async function createLiveBlueprint(
   > = [
     {
       type: "input_text",
-      text: `TITLE\n${request.title}\n\nTRANSCRIPT\n${request.transcript}\n\nAVAILABLE SOURCES\n${JSON.stringify(sourceIndex)}`,
+      text: `TITLE\n${request.title}\n\nSTORY TEXT\n${request.transcript}\n\nAVAILABLE SOURCES\n${JSON.stringify(sourceIndex)}`,
     },
   ];
 
@@ -341,7 +456,10 @@ async function createLiveBlueprint(
   if (!response.output_parsed) throw new Error("GPT-5.6 returned no parsed blueprint.");
 
   const blueprint = exhibitBlueprintSchema.parse(response.output_parsed);
-  return { blueprint, manifest: compileBlueprint(blueprint, request) };
+  return {
+    blueprint,
+    manifest: compileBlueprint(blueprint, request, environment.OPENAI_MODEL ?? "gpt-5.6"),
+  };
 }
 
 export async function createBlueprint(
@@ -371,7 +489,7 @@ export async function createBlueprint(
         ? "Live GPT-5.6 analysis was disabled; showing the closest deterministic exhibit."
         : "OPENAI_API_KEY is not configured; showing the closest deterministic exhibit without exposing credentials.",
       trace: [
-        { agent: "GPT-5.6", action: "Analyze transcript and images into a structured blueprint.", status: "fallback" },
+        { agent: "GPT-5.6", action: "Analyze story text and images into a structured blueprint.", status: "fallback" },
         { agent: "Truth gate", action: "Load a prevalidated source-grounded manifest.", status: "passed" },
       ],
     };
@@ -384,7 +502,7 @@ export async function createBlueprint(
       manifest,
       blueprint,
       trace: [
-        { agent: "GPT-5.6", action: "Mapped transcript and images into a strict structured blueprint.", status: "passed" },
+        { agent: "GPT-5.6", action: "Mapped story text and images into a strict structured blueprint.", status: "passed" },
         { agent: "Truth gate", action: "Validated all source, claim, hotspot, and mechanic references.", status: "passed" },
       ],
     };
@@ -394,19 +512,30 @@ export async function createBlueprint(
       manifest: demo,
       reason: "Live story analysis was unavailable; Keepscape recovered with a deterministic source-grounded exhibit.",
       trace: [
-        { agent: "GPT-5.6", action: "Analyze transcript and images into a structured blueprint.", status: "fallback" },
+        { agent: "GPT-5.6", action: "Analyze story text and images into a structured blueprint.", status: "fallback" },
         { agent: "Truth gate", action: "Recover with a prevalidated manifest.", status: "passed" },
       ],
     };
   }
 }
 
+const codexSpatialPlanSchema = z
+  .object({
+    enabled: z.boolean(),
+    preset: z.enum(["memory-corridor", "gallery-arc", "tabletop"]),
+    orderedPhotoSourceIds: z
+      .array(z.string().min(1).max(80))
+      .max(5)
+      .superRefine((sourceIds, context) => {
+        if (new Set(sourceIds).size !== sourceIds.length) {
+          context.addIssue({ code: "custom", message: "Spatial plan photo source IDs must be unique." });
+        }
+      }),
+  })
+  .strict();
+
 const codexBuildReportSchema = z
   .object({
-    summary: z.string().min(1).max(500),
-    interactionRationale: z.string().min(1).max(500),
-    groundingAssessment: z.string().min(1).max(500),
-    recommendations: z.array(z.string().min(1).max(240)).max(6),
     interaction: z
       .object({
         kind: z.enum(["collect", "sequence"]),
@@ -416,39 +545,46 @@ const codexBuildReportSchema = z
         retryMessage: z.string().min(1).max(280),
       })
       .strict(),
-    status: z.enum(["passed", "reviewed"]),
+    spatialPlan: codexSpatialPlanSchema,
   })
   .strict();
 
 const CODEX_BUILD_REPORT_JSON_SCHEMA = {
   type: "object",
   properties: {
-    summary: { type: "string" },
-    interactionRationale: { type: "string" },
-    groundingAssessment: { type: "string" },
-    recommendations: { type: "array", items: { type: "string" } },
     interaction: {
       type: "object",
       properties: {
         kind: { type: "string", enum: ["collect", "sequence"] },
         prompt: { type: "string" },
-        hotspotIds: { type: "array", minItems: 3, maxItems: 6, items: { type: "string" } },
+        hotspotIds: {
+          type: "array",
+          minItems: 3,
+          maxItems: 6,
+          items: { type: "string" },
+        },
         completionMessage: { type: "string" },
         retryMessage: { type: "string" },
       },
       required: ["kind", "prompt", "hotspotIds", "completionMessage", "retryMessage"],
       additionalProperties: false,
     },
-    status: { type: "string", enum: ["passed", "reviewed"] },
+    spatialPlan: {
+      type: "object",
+      properties: {
+        enabled: { type: "boolean" },
+        preset: { type: "string", enum: ["memory-corridor", "gallery-arc", "tabletop"] },
+        orderedPhotoSourceIds: {
+          type: "array",
+          maxItems: 5,
+          items: { type: "string" },
+        },
+      },
+      required: ["enabled", "preset", "orderedPhotoSourceIds"],
+      additionalProperties: false,
+    },
   },
-  required: [
-    "summary",
-    "interactionRationale",
-    "groundingAssessment",
-    "recommendations",
-    "interaction",
-    "status",
-  ],
+  required: ["interaction", "spatialPlan"],
   additionalProperties: false,
 } as const;
 
@@ -461,6 +597,163 @@ function redactInlineAssets(manifest: ExhibitManifest): string {
         : value,
     2,
   );
+}
+
+export function compileCodexBuildReport(
+  manifestInput: ExhibitManifest,
+  reportInput: unknown,
+  model: string,
+) {
+  const manifest = exhibitManifestSchema.parse(manifestInput);
+  const report = codexBuildReportSchema.parse(reportInput);
+  const scene = manifest.scenes[0];
+  const availableHotspotIds = new Set(scene.hotspots.map((hotspot) => hotspot.id));
+  const selectedHotspotIds = report.interaction.hotspotIds;
+  if (
+    new Set(selectedHotspotIds).size !== selectedHotspotIds.length ||
+    selectedHotspotIds.some((hotspotId) => !availableHotspotIds.has(hotspotId))
+  ) {
+    throw new Error("Codex interaction referenced unavailable or duplicate hotspots.");
+  }
+
+  const compiledInteraction =
+    report.interaction.kind === "collect"
+      ? {
+          kind: "collect" as const,
+          prompt: report.interaction.prompt,
+          targetHotspotIds: selectedHotspotIds,
+          completionMessage: report.interaction.completionMessage,
+        }
+      : {
+          kind: "sequence" as const,
+          prompt: report.interaction.prompt,
+          stepHotspotIds: selectedHotspotIds,
+          successMessage: report.interaction.completionMessage,
+          retryMessage: report.interaction.retryMessage,
+        };
+
+  const orderedPhotoSourceIds = report.spatialPlan.orderedPhotoSourceIds;
+  let compiledSpatial = scene.spatial;
+  let compiledHotspots = scene.hotspots;
+  let spatialPlanDetail: string;
+
+  if (!scene.spatial) {
+    if (report.spatialPlan.enabled || orderedPhotoSourceIds.length !== 0) {
+      throw new Error("Codex must disable spatial planning for a non-spatial scene and return no photo source IDs.");
+    }
+    spatialPlanDetail = "The non-spatial scene explicitly returned an empty, disabled spatial plan.";
+  } else {
+    if (!report.spatialPlan.enabled) {
+      throw new Error("Codex must return an enabled spatial plan for the existing spatial scene.");
+    }
+    if (orderedPhotoSourceIds.length < 3 || orderedPhotoSourceIds.length > 5) {
+      throw new Error("Codex spatial plans require three to five photo source IDs.");
+    }
+    if (new Set(orderedPhotoSourceIds).size !== orderedPhotoSourceIds.length) {
+      throw new Error("Codex spatial plan referenced duplicate photo source IDs.");
+    }
+
+    const sourceById = new Map(manifest.sources.map((source) => [source.id, source]));
+    for (const sourceId of orderedPhotoSourceIds) {
+      const source = sourceById.get(sourceId);
+      if (!source) throw new Error(`Codex spatial plan referenced unavailable source ${sourceId}.`);
+      if (source.kind !== "photo") {
+        throw new Error(`Codex spatial plan source ${sourceId} is not a photo.`);
+      }
+      if (!scene.sourceIds.includes(sourceId)) {
+        throw new Error(`Codex spatial plan source ${sourceId} is not part of scene ${scene.id}.`);
+      }
+    }
+
+    const expectedPhotoSourceIds = scene.spatial.planes.map((plane) => plane.sourceId);
+    const expectedPhotoSourceIdSet = new Set(expectedPhotoSourceIds);
+    if (
+      orderedPhotoSourceIds.length !== expectedPhotoSourceIds.length ||
+      orderedPhotoSourceIds.some((sourceId) => !expectedPhotoSourceIdSet.has(sourceId))
+    ) {
+      throw new Error("Codex spatial plan must contain the existing spatial photo sources exactly once.");
+    }
+
+    const nextSpatial = createPhotoDiorama(orderedPhotoSourceIds, report.spatialPlan.preset);
+    if (!nextSpatial) throw new Error("Codex spatial plan could not be compiled into a bounded preset.");
+    const previousPlaneById = new Map(scene.spatial.planes.map((plane) => [plane.id, plane]));
+    const nextPlaneBySourceId = new Map(nextSpatial.planes.map((plane) => [plane.sourceId, plane]));
+    compiledHotspots = scene.hotspots.map((hotspot) => {
+      if (!hotspot.spatialAnchor) return hotspot;
+      const previousPlane = previousPlaneById.get(hotspot.spatialAnchor.planeId);
+      if (!previousPlane || !hotspot.sourceIds.includes(previousPlane.sourceId)) {
+        throw new Error(`Hotspot ${hotspot.id} has an invalid pre-build spatial anchor.`);
+      }
+      const nextPlane = nextPlaneBySourceId.get(previousPlane.sourceId);
+      if (!nextPlane) {
+        throw new Error(`Codex spatial plan omitted the cited photo for hotspot ${hotspot.id}.`);
+      }
+      return {
+        ...hotspot,
+        spatialAnchor: { ...hotspot.spatialAnchor, planeId: nextPlane.id },
+      };
+    });
+    compiledSpatial = nextSpatial;
+    spatialPlanDetail = `${orderedPhotoSourceIds.length} distinct photo sources resolve in scene ${scene.id}; canonical ${report.spatialPlan.preset} slots were applied in this order: ${orderedPhotoSourceIds.join(" → ")}.`;
+  }
+
+  const builtManifest = exhibitManifestSchema.parse({
+    ...manifest,
+    scenes: manifest.scenes.map((manifestScene, index) =>
+      index === 0
+        ? {
+            ...manifestScene,
+            hotspots: compiledHotspots,
+            interaction: compiledInteraction,
+            ...(compiledSpatial ? { spatial: compiledSpatial } : {}),
+          }
+        : manifestScene,
+    ),
+    buildEvidence: {
+      model,
+      agents: [
+        ...manifest.buildEvidence.agents,
+        {
+          name: "Codex interaction and spatial builder",
+          role: report.spatialPlan.enabled
+            ? "Created the story-specific typed mechanic and a bounded spatial plan in an isolated, no-network workspace."
+            : "Created the story-specific typed mechanic and explicitly disabled spatial planning for the non-spatial scene.",
+          result: report.spatialPlan.enabled
+            ? `The host compiled a ${report.interaction.kind} interaction over ${selectedHotspotIds.length} existing hotspots and applied the allowlisted ${report.spatialPlan.preset} preset.`
+            : `The host compiled a ${report.interaction.kind} interaction over ${selectedHotspotIds.length} existing hotspots with spatial planning disabled.`,
+          status: "passed" as const,
+        },
+        {
+          name: "Codex output allowlist",
+          role: "Host-validated the bounded Codex output without trusting model-authored receipt prose.",
+          result: `All ${selectedHotspotIds.length} interaction IDs and ${orderedPhotoSourceIds.length} spatial photo IDs resolved uniquely against the input manifest.`,
+          status: "passed" as const,
+        },
+      ],
+      tests: [
+        ...manifest.buildEvidence.tests,
+        {
+          name: "Codex interaction compile",
+          detail: `The host compiled one ${report.interaction.kind} mechanic from ${selectedHotspotIds.length} distinct allowlisted hotspot IDs.`,
+          status: "passed" as const,
+        },
+        {
+          name: "Hotspot allowlist",
+          detail: `${selectedHotspotIds.length} distinct generated interaction references resolve in the scene.`,
+          status: "passed" as const,
+        },
+        { name: "Spatial plan allowlist", detail: spatialPlanDetail, status: "passed" as const },
+        {
+          name: "Post-build schema",
+          detail: "The final manifest passed Zod and referential checks.",
+          status: "passed" as const,
+        },
+      ],
+      generatedFiles: manifest.buildEvidence.generatedFiles,
+    },
+  });
+
+  return { manifest: builtManifest, report };
 }
 
 function demoBuildResult(manifest: ExhibitManifest, reason: string): PipelineResult {
@@ -492,18 +785,40 @@ export async function buildExhibit(
     );
   }
 
-  let cleanupWorkspace: (() => Promise<void>) | undefined;
+  const cleanupRoots: string[] = [];
   try {
-    const [{ mkdtemp, rm, writeFile }, { tmpdir }, { join }, { Codex }] = await Promise.all([
+    const [{ chmod, copyFile, mkdtemp, writeFile }, { homedir, tmpdir }, { join }, { Codex }] = await Promise.all([
       import("node:fs/promises"),
       import("node:os"),
       import("node:path"),
       import("@openai/codex-sdk"),
     ]);
     const workspace = await mkdtemp(join(tmpdir(), "keepscape-codex-"));
-    cleanupWorkspace = () => rm(workspace, { recursive: true, force: true });
+    const isolatedCodexHome = await mkdtemp(join(tmpdir(), "keepscape-codex-home-"));
+    cleanupRoots.push(workspace, isolatedCodexHome);
+    await chmod(isolatedCodexHome, 0o700);
+
+    if (!environment.OPENAI_API_KEY) {
+      const signedInCodexHome = process.env.CODEX_HOME ?? join(homedir(), ".codex");
+      await copyFile(join(signedInCodexHome, "auth.json"), join(isolatedCodexHome, "auth.json"));
+      await chmod(join(isolatedCodexHome, "auth.json"), 0o600);
+    }
+
     await writeFile(join(workspace, "manifest.json"), redactInlineAssets(manifest), { encoding: "utf8", mode: 0o600 });
-    const codex = new Codex(environment.OPENAI_API_KEY ? { apiKey: environment.OPENAI_API_KEY } : undefined);
+    const codex = new Codex({
+      ...(environment.OPENAI_API_KEY ? { apiKey: environment.OPENAI_API_KEY } : {}),
+      env: {
+        CODEX_HOME: isolatedCodexHome,
+        HOME: isolatedCodexHome,
+        PATH: process.env.PATH ?? "/usr/bin:/bin:/usr/sbin:/sbin",
+        LANG: process.env.LANG ?? "C.UTF-8",
+        LC_ALL: process.env.LC_ALL ?? process.env.LANG ?? "C.UTF-8",
+        TMPDIR: tmpdir(),
+      },
+      config: {
+        shell_environment_policy: { inherit: "none" },
+      },
+    });
     const thread = codex.startThread({
       workingDirectory: workspace,
       skipGitRepoCheck: true,
@@ -515,88 +830,41 @@ export async function buildExhibit(
       webSearchMode: "disabled",
     });
     const turn = await thread.run(
-      `Act as Keepscape's isolated interaction builder. Read manifest.json and CREATE or refine its one typed interaction using only the existing hotspot IDs. Choose collect for independent evidence and sequence only when source material establishes order. Do not change claims, add factual story content, execute visitor code, or access the network. Prompt and completion copy must describe interaction state without asserting new story facts. Return the complete typed interaction plus a concise grounding receipt.`,
+      `Act as Keepscape's isolated interaction and spatial-plan builder. Read manifest.json and CREATE or refine its first scene's typed interaction using only existing hotspot IDs. Choose collect for independent evidence and sequence only when source material establishes order. If the first scene already has a spatial plan, return spatialPlan.enabled=true, select one allowlisted preset, and list every existing spatial plane photo source ID exactly once in the intended display order. If it has no spatial plan, return enabled=false and an empty orderedPhotoSourceIds array. Never invent, omit, or duplicate source IDs. Do not change claims, add factual story content, execute visitor code, or access the network. Prompt and completion copy must describe interaction state without asserting new story facts. Return only the complete typed interaction and required spatial plan.`,
       { outputSchema: CODEX_BUILD_REPORT_JSON_SCHEMA },
     );
-    const report = codexBuildReportSchema.parse(JSON.parse(turn.finalResponse));
-
-    const scene = manifest.scenes[0];
-    const availableHotspotIds = new Set(scene.hotspots.map((hotspot) => hotspot.id));
-    const selectedHotspotIds = report.interaction.hotspotIds;
-    if (
-      new Set(selectedHotspotIds).size !== selectedHotspotIds.length ||
-      selectedHotspotIds.some((hotspotId) => !availableHotspotIds.has(hotspotId))
-    ) {
-      throw new Error("Codex interaction referenced unavailable or duplicate hotspots.");
-    }
-    const compiledInteraction =
-      report.interaction.kind === "collect"
-        ? {
-            kind: "collect" as const,
-            prompt: report.interaction.prompt,
-            targetHotspotIds: selectedHotspotIds,
-            completionMessage: report.interaction.completionMessage,
-          }
-        : {
-            kind: "sequence" as const,
-            prompt: report.interaction.prompt,
-            stepHotspotIds: selectedHotspotIds,
-            successMessage: report.interaction.completionMessage,
-            retryMessage: report.interaction.retryMessage,
-          };
-
-    await writeFile(join(workspace, "interaction-spec.json"), JSON.stringify(compiledInteraction, null, 2), {
-      encoding: "utf8",
-      mode: 0o600,
-    });
-
-    const builtManifest = exhibitManifestSchema.parse({
-      ...manifest,
-      scenes: [{ ...scene, interaction: compiledInteraction }],
-      buildEvidence: {
-        model: `${environment.CODEX_MODEL ?? "Codex account default"} via Codex SDK`,
-        agents: [
-          ...manifest.buildEvidence.agents,
-          {
-            name: "Codex interaction builder",
-            role: "Created the story-specific typed mechanic in an isolated, no-network workspace.",
-            result: report.summary,
-            status: report.status,
-          },
-          {
-            name: "Codex grounding review",
-            role: "Checked evidence references without inventing family history.",
-            result: report.groundingAssessment,
-            status: "reviewed",
-          },
-        ],
-        tests: [
-          ...manifest.buildEvidence.tests,
-          { name: "Codex interaction compile", detail: report.interactionRationale, status: "passed" },
-          {
-            name: "Hotspot allowlist",
-            detail: `${selectedHotspotIds.length} distinct generated interaction references resolve in the scene.`,
-            status: "passed",
-          },
-          { name: "Post-build schema", detail: "The final manifest passed Zod and referential checks.", status: "passed" },
-        ],
-        generatedFiles: Array.from(
-          new Set([...manifest.buildEvidence.generatedFiles, "temporary-workspace/interaction-spec.json"]),
-        ),
-      },
-    });
-    await writeFile(join(workspace, "compiled-manifest.json"), JSON.stringify(builtManifest, null, 2), {
-      encoding: "utf8",
-      mode: 0o600,
-    });
+    const { manifest: builtManifest, report } = compileCodexBuildReport(
+      manifest,
+      JSON.parse(turn.finalResponse),
+      `${environment.CODEX_MODEL ?? "Codex account default"} via Codex SDK`,
+    );
 
     return {
       mode: "live",
       manifest: builtManifest,
+      spatialPlan: report.spatialPlan,
       trace: [
-        { agent: "Codex", action: "Created a typed interaction in an isolated no-network workspace.", status: "passed" },
-        { agent: "Truth gate", action: "Revalidated the manifest after the Codex build pass.", status: "passed" },
-        { agent: "Typed runtime", action: "Prepared the schema-safe interaction for rendering.", status: "passed" },
+        {
+          agent: "Codex",
+          action: report.spatialPlan.enabled
+            ? "Created a typed interaction and bounded spatial plan in an isolated no-network workspace."
+            : "Created a typed interaction and explicitly returned an empty spatial plan for the non-spatial scene.",
+          status: "passed",
+        },
+        {
+          agent: "Truth gate",
+          action: report.spatialPlan.enabled
+            ? "Allowlisted every hotspot and spatial photo source, rebuilt canonical slots, and revalidated the manifest."
+            : "Allowlisted every hotspot, verified the disabled spatial plan, and revalidated the manifest.",
+          status: "passed",
+        },
+        {
+          agent: "Typed runtime",
+          action: report.spatialPlan.enabled
+            ? "Prepared the schema-safe interaction and spatial preset for rendering."
+            : "Prepared the schema-safe non-spatial interaction for rendering.",
+          status: "passed",
+        },
       ],
     };
   } catch {
@@ -605,7 +873,8 @@ export async function buildExhibit(
       "The isolated Codex build was unavailable; Keepscape recovered with the validated typed runtime.",
     );
   } finally {
-    await cleanupWorkspace?.().catch(() => undefined);
+    const { rm } = await import("node:fs/promises");
+    await Promise.all(cleanupRoots.map((root) => rm(root, { recursive: true, force: true }).catch(() => undefined)));
   }
 }
 

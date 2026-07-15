@@ -23,6 +23,8 @@ export function applyHumanConfirmations(
   const confirmationSources: Source[] = confirmations.map((claim) => ({
     id: confirmationSourceByClaim.get(claim.id) as string,
     kind: "human",
+    humanRole: "confirmation",
+    confirmedClaimId: claim.id,
     label: "Storyteller confirmation · source desk",
     excerpt: `The storyteller explicitly confirmed: “${claim.text}”`,
   }));
@@ -86,4 +88,127 @@ export function applyHumanConfirmations(
   };
 
   return exhibitManifestSchema.parse(reviewed);
+}
+
+export const GENERATED_COPY_REVIEW_SOURCE_ID = "human-generated-copy-review";
+export const INTERACTION_COPY_REVIEW_SOURCE_ID = "human-interaction-copy-review";
+export const preservedUncertaintySourceId = (claimId: string) => `human-preserved-uncertainty-${claimId}`;
+
+/** Records the required source-desk read-through of displayed claims and all
+ * model-authored exhibit, scene, hotspot, and interaction-draft copy. This is a human language review receipt,
+ * not a claim that the host can semantically prove prose. */
+export function recordSourceDeskReview(
+  manifest: ExhibitManifest,
+  preservedClaimIds: ReadonlySet<string>,
+): ExhibitManifest {
+  if (manifest.sources.some((source) => source.id === GENERATED_COPY_REVIEW_SOURCE_ID)) {
+    return structuredClone(manifest);
+  }
+
+  const remainingUncertainties = manifest.claims.filter((claim) => claim.status === "uncertain");
+  const unresolved = remainingUncertainties.filter((claim) => !preservedClaimIds.has(claim.id));
+  if (unresolved.length > 0) {
+    throw new Error(`Source-desk review is missing a decision for: ${unresolved.map((claim) => claim.id).join(", ")}`);
+  }
+  const preservationSources: Source[] = remainingUncertainties.map((claim) => ({
+    id: preservedUncertaintySourceId(claim.id),
+    kind: "human",
+    humanRole: "uncertainty-preserved",
+    label: "Storyteller choice · uncertainty preserved",
+    excerpt: `The storyteller reviewed this claim and deliberately kept it uncertain: “${claim.text}”`,
+  }));
+  const reviewSourceIds = [GENERATED_COPY_REVIEW_SOURCE_ID, ...preservationSources.map((source) => source.id)];
+
+  return exhibitManifestSchema.parse({
+    ...manifest,
+    sources: [
+      ...manifest.sources,
+      {
+        id: GENERATED_COPY_REVIEW_SOURCE_ID,
+        kind: "human" as const,
+        humanRole: "language-review" as const,
+        label: "Storyteller generated-language review · source desk",
+        excerpt: "The storyteller reviewed the displayed claims and all generated exhibit, scene, hotspot, and interaction-draft copy against the listed sources before build.",
+      },
+      ...preservationSources,
+    ],
+    scenes: manifest.scenes.map((scene) => ({
+      ...scene,
+      sourceIds: unique([...scene.sourceIds, ...reviewSourceIds]),
+      hotspots: scene.hotspots.map((hotspot) => ({
+        ...hotspot,
+        sourceIds: unique([
+          ...hotspot.sourceIds,
+          ...hotspot.claimIds.flatMap((claimId) =>
+            preservedClaimIds.has(claimId) ? [preservedUncertaintySourceId(claimId)] : []),
+        ]),
+      })),
+    })),
+    buildEvidence: {
+      ...manifest.buildEvidence,
+      agents: [
+        ...manifest.buildEvidence.agents,
+        {
+          name: "Storyteller language review",
+          role: "Reviewed generated narrative wording after the host resolved its typed references.",
+          result: `The displayed generated story copy passed the explicit read-through gate; ${remainingUncertainties.length} uncertain claim${remainingUncertainties.length === 1 ? " was" : "s were"} deliberately preserved.`,
+          status: "reviewed" as const,
+        },
+      ],
+      tests: [
+        ...manifest.buildEvidence.tests,
+        {
+          name: "Generated-language gate",
+          detail: `A durable language-review source and ${preservationSources.length} preserved-uncertainty receipt${preservationSources.length === 1 ? "" : "s"} were attached before build.`,
+          status: "passed" as const,
+        },
+      ],
+    },
+  });
+}
+
+/** Records the person's final review of Codex-authored interaction-state copy.
+ * The copy is constrained not to add facts, but semantic approval remains human. */
+export function recordInteractionCopyReview(manifest: ExhibitManifest): ExhibitManifest {
+  if (manifest.sources.some((source) => source.id === INTERACTION_COPY_REVIEW_SOURCE_ID)) {
+    return structuredClone(manifest);
+  }
+
+  return exhibitManifestSchema.parse({
+    ...manifest,
+    sources: [
+      ...manifest.sources,
+      {
+        id: INTERACTION_COPY_REVIEW_SOURCE_ID,
+        kind: "human" as const,
+        humanRole: "language-review" as const,
+        label: "Storyteller interaction-language review · build trail",
+        excerpt: "The storyteller reviewed the final Codex mechanic, target set or order, prompt, and completion/retry copy before entering the exhibit.",
+      },
+    ],
+    scenes: manifest.scenes.map((scene) => ({
+      ...scene,
+      sourceIds: unique([...scene.sourceIds, INTERACTION_COPY_REVIEW_SOURCE_ID]),
+    })),
+    buildEvidence: {
+      ...manifest.buildEvidence,
+      agents: [
+        ...manifest.buildEvidence.agents,
+        {
+          name: "Final interaction-language review",
+          role: "Reviewed the Codex-authored mechanic, target set or order, and interaction-state wording after compilation.",
+          result: "The displayed mechanic, targets/order, prompt, and completion/retry copy were explicitly approved before launch.",
+          status: "reviewed" as const,
+        },
+      ],
+      tests: [
+        ...manifest.buildEvidence.tests,
+        {
+          name: "Post-Codex language gate",
+          detail: "A durable human review source was attached after interaction compilation.",
+          status: "passed" as const,
+        },
+      ],
+    },
+  });
 }

@@ -5,12 +5,29 @@ export const normalizedRegionSchema = z.object({
   y: z.number().min(0).max(1),
   width: z.number().positive().max(1),
   height: z.number().positive().max(1),
+}).superRefine((region, context) => {
+  if (region.x + region.width > 1) {
+    context.addIssue({
+      code: "custom",
+      message: "Photo source region must fit within the image width.",
+      path: ["width"],
+    });
+  }
+  if (region.y + region.height > 1) {
+    context.addIssue({
+      code: "custom",
+      message: "Photo source region must fit within the image height.",
+      path: ["height"],
+    });
+  }
 });
 
 export const sourceSchema = z
   .object({
     id: z.string().min(1),
     kind: z.enum(["photo", "audio", "human"]),
+    humanRole: z.enum(["story-note", "confirmation", "language-review", "uncertainty-preserved"]).optional(),
+    confirmedClaimId: z.string().min(1).optional(),
     label: z.string().min(1),
     assetPath: z.string().optional(),
     capturedAt: z.string().optional(),
@@ -20,6 +37,34 @@ export const sourceSchema = z
     excerpt: z.string().optional(),
   })
   .superRefine((source, context) => {
+    if (source.kind === "human" && source.humanRole === undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "Human sources must identify a story note, confirmation, language review, or uncertainty decision.",
+        path: ["humanRole"],
+      });
+    }
+    if (source.kind !== "human" && source.humanRole !== undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "Only human sources can carry a human review role.",
+        path: ["humanRole"],
+      });
+    }
+    if (source.humanRole === "confirmation" && source.confirmedClaimId === undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "Human confirmation sources must identify the exact confirmed claim.",
+        path: ["confirmedClaimId"],
+      });
+    }
+    if (source.humanRole !== "confirmation" && source.confirmedClaimId !== undefined) {
+      context.addIssue({
+        code: "custom",
+        message: "Only claim confirmation sources can bind a confirmed claim ID.",
+        path: ["confirmedClaimId"],
+      });
+    }
     if (source.timeEndSeconds !== undefined && source.timeStartSeconds === undefined) {
       context.addIssue({
         code: "custom",
@@ -47,6 +92,33 @@ export const groundedClaimSchema = z.object({
   sourceIds: z.array(z.string().min(1)).min(1),
 });
 
+export const spatialPlaneSlotSchema = z.enum([
+  "near-left",
+  "near-right",
+  "mid-left",
+  "mid-right",
+  "far-center",
+]);
+
+export const spatialPlaneSchema = z.object({
+  id: z.string().min(1),
+  sourceId: z.string().min(1),
+  slot: spatialPlaneSlotSchema,
+});
+
+export const photoDioramaSpatialSchema = z.object({
+  kind: z.literal("photo-diorama"),
+  preset: z.enum(["memory-corridor", "gallery-arc", "tabletop"]),
+  disclaimer: z.string().min(1).max(500),
+  planes: z.array(spatialPlaneSchema).min(3).max(5),
+});
+
+export const spatialAnchorSchema = z.object({
+  planeId: z.string().min(1),
+  u: z.number().min(0).max(1),
+  v: z.number().min(0).max(1),
+});
+
 export const hotspotSchema = z.object({
   id: z.string().min(1),
   title: z.string().min(1),
@@ -59,19 +131,33 @@ export const hotspotSchema = z.object({
   claimIds: z.array(z.string().min(1)).min(1),
   sourceIds: z.array(z.string().min(1)).min(1),
   interpretation: z.string().optional(),
+  spatialAnchor: spatialAnchorSchema.optional(),
 });
+
+const uniqueInteractionIds = (minimum: number) =>
+  z
+    .array(z.string().min(1))
+    .min(minimum)
+    .superRefine((ids, context) => {
+      if (new Set(ids).size !== ids.length) {
+        context.addIssue({
+          code: "custom",
+          message: "Interaction hotspot IDs must be unique.",
+        });
+      }
+    });
 
 const collectInteractionSchema = z.object({
   kind: z.literal("collect"),
   prompt: z.string().min(1),
-  targetHotspotIds: z.array(z.string().min(1)).min(2),
+  targetHotspotIds: uniqueInteractionIds(2),
   completionMessage: z.string().min(1),
 });
 
 const sequenceInteractionSchema = z.object({
   kind: z.literal("sequence"),
   prompt: z.string().min(1),
-  stepHotspotIds: z.array(z.string().min(1)).min(3),
+  stepHotspotIds: uniqueInteractionIds(3),
   successMessage: z.string().min(1),
   retryMessage: z.string().min(1),
 });
@@ -90,6 +176,7 @@ export const sceneSchema = z.object({
   sourceIds: z.array(z.string().min(1)).min(1),
   hotspots: z.array(hotspotSchema).min(3),
   interaction: interactionSchema,
+  spatial: photoDioramaSpatialSchema.optional(),
 });
 
 export const buildEvidenceSchema = z.object({
@@ -134,6 +221,7 @@ export const exhibitManifestSchema = z
   })
   .superRefine((manifest, context) => {
     const sourceIds = new Set(manifest.sources.map((source) => source.id));
+    const sourceById = new Map(manifest.sources.map((source) => [source.id, source]));
     const claimIds = new Set(manifest.claims.map((claim) => claim.id));
     const claimById = new Map(manifest.claims.map((claim) => [claim.id, claim]));
 
@@ -151,6 +239,10 @@ export const exhibitManifestSchema = z
     reportDuplicates(manifest.claims.map((claim) => claim.id), "Claim");
     reportDuplicates(manifest.scenes.map((scene) => scene.id), "Scene");
     reportDuplicates(manifest.scenes.flatMap((scene) => scene.hotspots.map((hotspot) => hotspot.id)), "Hotspot");
+    reportDuplicates(
+      manifest.scenes.flatMap((scene) => scene.spatial?.planes.map((plane) => plane.id) ?? []),
+      "Spatial plane",
+    );
 
     for (const claim of manifest.claims) {
       const referencedSources = claim.sourceIds.flatMap((sourceId) => {
@@ -164,23 +256,55 @@ export const exhibitManifestSchema = z
       }
       if (
         claim.status === "source-backed" &&
-        !referencedSources.some((source) => source.kind === "photo" || source.kind === "audio")
+        !referencedSources.some(
+          (source) =>
+            (source.kind === "photo" && source.region !== undefined) ||
+            (source.kind === "audio" && source.timeStartSeconds !== undefined),
+        )
       ) {
         context.addIssue({
           code: "custom",
-          message: `Source-backed claim ${claim.id} requires photo or audio evidence.`,
+          message: `Source-backed claim ${claim.id} requires a photo region or audio timecode.`,
         });
       }
-      if (claim.status === "human-confirmed" && !referencedSources.some((source) => source.kind === "human")) {
+      if (
+        claim.status === "human-confirmed" &&
+        !referencedSources.some(
+          (source) =>
+            source.kind === "human" &&
+            source.humanRole === "confirmation" &&
+            source.confirmedClaimId === claim.id,
+        )
+      ) {
         context.addIssue({
           code: "custom",
-          message: `Human-confirmed claim ${claim.id} requires an explicit human source.`,
+          message: `Human-confirmed claim ${claim.id} requires an explicit human confirmation source.`,
+        });
+      }
+    }
+
+    for (const source of manifest.sources) {
+      if (source.humanRole !== "confirmation" || !source.confirmedClaimId) continue;
+      const confirmedClaim = claimById.get(source.confirmedClaimId);
+      if (
+        !confirmedClaim ||
+        confirmedClaim.status !== "human-confirmed" ||
+        !confirmedClaim.sourceIds.includes(source.id)
+      ) {
+        context.addIssue({
+          code: "custom",
+          message: `Confirmation source ${source.id} must be attached to its exact human-confirmed claim ${source.confirmedClaimId}.`,
         });
       }
     }
 
     for (const scene of manifest.scenes) {
       const sceneHotspotIds = new Set(scene.hotspots.map((hotspot) => hotspot.id));
+      const spatialPlaneById = new Map(scene.spatial?.planes.map((plane) => [plane.id, plane]) ?? []);
+      if (scene.spatial) {
+        reportDuplicates(scene.spatial.planes.map((plane) => plane.sourceId), `Spatial plane source in ${scene.id}`);
+        reportDuplicates(scene.spatial.planes.map((plane) => plane.slot), `Spatial plane slot in ${scene.id}`);
+      }
       for (const sourceId of scene.sourceIds) {
         if (!sourceIds.has(sourceId)) {
           context.addIssue({ code: "custom", message: `Scene ${scene.id} references missing source ${sourceId}.` });
@@ -216,6 +340,42 @@ export const exhibitManifestSchema = z
           }
         }
       }
+      for (const plane of scene.spatial?.planes ?? []) {
+        const source = sourceById.get(plane.sourceId);
+        if (!source) {
+          context.addIssue({
+            code: "custom",
+            message: `Spatial plane ${plane.id} references missing source ${plane.sourceId}.`,
+          });
+        } else if (source.kind !== "photo") {
+          context.addIssue({
+            code: "custom",
+            message: `Spatial plane ${plane.id} requires a photo source.`,
+          });
+        }
+        if (!scene.sourceIds.includes(plane.sourceId)) {
+          context.addIssue({
+            code: "custom",
+            message: `Scene ${scene.id} omits spatial plane source ${plane.sourceId}.`,
+          });
+        }
+      }
+      for (const hotspot of scene.hotspots) {
+        if (hotspot.spatialAnchor) {
+          const anchorPlane = spatialPlaneById.get(hotspot.spatialAnchor.planeId);
+          if (!anchorPlane) {
+            context.addIssue({
+              code: "custom",
+              message: `Hotspot ${hotspot.id} references missing spatial plane ${hotspot.spatialAnchor.planeId}.`,
+            });
+          } else if (!hotspot.sourceIds.includes(anchorPlane.sourceId)) {
+            context.addIssue({
+              code: "custom",
+              message: `Hotspot ${hotspot.id} spatial anchor must use one of its cited photo sources.`,
+            });
+          }
+        }
+      }
       const ids =
         scene.interaction.kind === "collect"
           ? scene.interaction.targetHotspotIds
@@ -233,6 +393,10 @@ export const exhibitManifestSchema = z
 
 export type Source = z.infer<typeof sourceSchema>;
 export type GroundedClaim = z.infer<typeof groundedClaimSchema>;
+export type SpatialPlaneSlot = z.infer<typeof spatialPlaneSlotSchema>;
+export type SpatialPlane = z.infer<typeof spatialPlaneSchema>;
+export type PhotoDioramaSpatial = z.infer<typeof photoDioramaSpatialSchema>;
+export type SpatialAnchor = z.infer<typeof spatialAnchorSchema>;
 export type Hotspot = z.infer<typeof hotspotSchema>;
 export type ExhibitScene = z.infer<typeof sceneSchema>;
 export type ExhibitManifest = z.infer<typeof exhibitManifestSchema>;
