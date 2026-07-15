@@ -24,7 +24,7 @@ Last verified: 2026-07-15 (Asia/Taipei)
 - A working project that uses Codex and integrates GPT-5.6 into product behavior.
 - Exactly one category: Apps for Your Life, Work & Productivity, Developer Tools, or Education.
 - An English project description.
-- A public YouTube demo with narration. Target 2:55; the strict wording says under three minutes.
+- A public YouTube demo with narration, strictly under three minutes. Current release candidate: 1:28.371.
 - A public repository with a relevant license, or a private repository shared with both judging addresses.
 - A README with setup, sample data, run/test guidance, Codex workflow, human decisions, and concrete
   GPT-5.6 usage.
@@ -49,10 +49,11 @@ shown or proven in the demo is lower priority than an end-to-end capability that
 - Project `1330616` exists as an empty `submission_pre_draft`; it is not a final submission.
 - Final product name: **Keepscape**. Category: **Apps for Your Life**.
 - Public repository: <https://github.com/gn00295120/keepscape>.
-- Hosted judge experience: <https://keepscape.lucasfutures-h1-20260507.workers.dev>.
+- Hosted judge experience: <https://keepscape.lucasfutures-h1-20260507.workers.dev>, deployed from commit
+  `609e905d3dc664f581c91564c52cbc686f44ff35`.
 - The Devpost draft has not yet been populated with the prepared description, repository, hosted URL, video,
   or session ID.
-- Public YouTube demo is still pending final capture and upload.
+- An 88.371-second v3 release candidate has been rendered and validated; public YouTube upload is still pending.
 - Core Build Week Codex thread / `/feedback` candidate: `019f62dd-efe8-7e41-96b6-5293d13b88cb`.
 
 ## Submission form fields

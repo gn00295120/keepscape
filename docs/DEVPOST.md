@@ -14,8 +14,8 @@ Apps for Your Life
 
 ## One-line description
 
-Keepscape uses GPT-5.6 and Codex to turn real photos and original voice into a source-grounded, walkable memory
-space where every factual detail links back to its source.
+Keepscape uses GPT-5.6 and Codex to turn photos plus a spoken or written memory into an explorable spatial story,
+with a Truth Thread from every factual detail to its source.
 
 ## Inspiration
 
@@ -43,11 +43,11 @@ One story becomes a three-photo night-market corridor that visitors can move thr
 becomes a hands-on repair ritual where the order itself carries meaning. The result is not a reskinned
 slideshow: the spatial arrangement and interaction change with the story.
 
-The signature **Evidence Lens** desaturates generated scenery while keeping the selected cited source view
-legible. When reviewed region metadata exists—as it does in the manually calibrated judge fixture—it outlines
-that cited region inside the original view. Every object can still open a source card with narration timecodes
-or explicit human confirmation. The space is plainly labeled as a generated spatial interpretation—not a scan
-or reconstruction. Keepscape never clones a voice, recreates a person, or presents model confidence as history.
+The signature **Evidence Lens** makes the full-screen memory corridor recede while a cinematic **Truth Thread**
+keeps the selected source legible. In one frame it resolves the exact photo crop, audio range, human decision,
+and the boundary between evidence and spatial interpretation. The complete source archive remains one click
+away. The space is plainly labeled as a generated spatial interpretation—not a scan or reconstruction.
+Keepscape never clones a voice, recreates a person, or presents model confidence as history.
 
 ## How we built it
 
@@ -92,7 +92,8 @@ experience is much more specific to GPT-5.6 and Codex.
 ## Accomplishments that we're proud of
 
 - A multi-photo walkable memory space and a second, visibly different mechanic from one evidence contract.
-- Evidence Lens makes the line between generated space and the cited source view visible in one interaction.
+- Evidence Lens makes the generated world recede while its Truth Thread resolves the exact source crop, audio
+  range, human decision, and interpretation boundary in the same cinematic frame.
 - Source provenance remains available inside the emotional experience instead of living in a separate report.
 - The complete experience works without judge credentials while live GPT-5.6 and Codex modes remain real and
   inspectable.

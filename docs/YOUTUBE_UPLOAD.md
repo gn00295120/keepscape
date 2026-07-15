@@ -10,16 +10,15 @@ Public. The OpenAI Build Week submission rules require a public YouTube video.
 
 ## Description
 
-Keepscape turns three to five photos and original voice into a source-grounded, walkable memory space where
-every factual detail can lead back to its source.
+A handful of photographs and a remembered story become somewhere you can enter. Keepscape turns family
+archives into cinematic, walkable memory spaces. Turn on Evidence Lens and the world recedes: a Truth Thread
+leads every factual detail to its exact photo region, audio timecode, or human decision. Uncertain stays
+uncertain.
 
-Built for OpenAI Build Week with GPT-5.6 Structured Outputs and the Codex SDK. GPT-5.6 creates a strict
-source-linked story blueprint; a human grounding desk resolves or preserves uncertainty; Codex works only with
-opaque, prose-free tokens to compile a bounded interaction and spatial preset; and the host validates and
-rebinds the result before rendering it in a safe typed runtime.
-
-The hosted judge experience is a credential-free verified replay. The repository contains a pinned, redacted
-receipt from a separate successful live Codex SDK run.
+GPT-5.6 maps the evidence into a source-linked blueprint; a person protects the story; Codex receives only
+opaque, prose-free tokens and compiles a bounded interaction and spatial plan; the host rebinds and validates
+everything. The hosted experience is a credential-free verified replay, backed by a pinned, redacted receipt
+from a separate live Codex SDK run.
 
 Try Keepscape:
 https://keepscape.lucasfutures-h1-20260507.workers.dev
@@ -36,12 +35,13 @@ OpenAI, Codex, GPT-5.6, AI, spatial computing, 3D web, family memories, provenan
 
 ## Upload assets
 
-- Final video: 135.663 seconds, native 1920×1080 at 25 fps, H.264 video with 48 kHz AAC audio.
-- Captions: 30-cue UTF-8 SubRip file; final cue ends at 134.742 seconds.
-- Thumbnail: 16:9 “Three photos. One voice.” transformation frame with no cursor.
-- Video SHA-256: `7d5dbe51654d91f2830512fdfaf30174322ae8879d83fde92e25622b3fce00c3`
-- Captions SHA-256: `96a42f17e4dcdbcc3ceb1e9b484f9ee7e2fb24ca5b7d82aca31de74c0afe9a8c`
-- Thumbnail SHA-256: `4e2f6436dff74cfe88431dc752737b1545998df701fc0e8befd8e3b1f73bc73b`
+- Final video: 88.371 seconds, native 1920×1080 at 25 fps, H.264 video with 48 kHz stereo AAC audio.
+- Captions: 18-cue UTF-8 SubRip file; final cue ends at 87.450 seconds.
+- Thumbnail: 16:9 Evidence Lens / Truth Thread frame from the working exhibit.
+- Capture source: production deployment at Git commit `609e905d3dc664f581c91564c52cbc686f44ff35`.
+- Video SHA-256: `daf60c0e8e9bbdc86025d2b51ca8fc33e6e0aa16822b964a90664073793c9f90`
+- Captions SHA-256: `473dbeb02304d50baeeb9d9ba611a8eb1620a07fdd42f982d553184c0e8873a1`
+- Thumbnail SHA-256: `eae8394d87fa55627f610432e47d3297bc53cef7a7b21da33e637477a9536312`
 
 ## Audience setting
 

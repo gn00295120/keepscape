@@ -11,14 +11,15 @@ This file keeps implementation priorities tied to the four equally weighted Buil
 
 ## Demo proof order
 
-1. Show the scattered source problem.
-2. Show GPT-5.6 linking claims to evidence and exposing uncertainty.
-3. Show the human resolving uncertainty and approving the displayed claims and generated story copy.
-4. Show Codex receiving no story prose and returning only opaque mechanic tokens plus a bounded photo-order plan,
-   then the host's rebind, structural checks, preserved copy, and receipt.
-5. Walk into the first exhibit, turn on Evidence Lens, and open a source card at the emotional peak.
-6. Play enough of the second mechanic to prove the first was not a template.
-7. Close on a real product promise, not a feature list.
+1. Turn three source photographs directly into a full-screen walkable memory corridor.
+2. Turn on Evidence Lens so the Truth Thread connects a detail to its source crop, audio timecode, and human
+   decision in one frame.
+3. Preserve one unsupported claim as uncertain instead of letting the model promote it to fact.
+4. Show the GPT-5.6 / person / Codex roles, then the real public replay and pinned live SDK receipt.
+5. Complete Lantern Lane and hold on **3/3 · archive awakened**.
+6. Complete the evidence-shaped Repair Bench sequence and hold on **4/4 · archive awakened**.
+7. Show the public engineering proof card, then close on the product promise: AI can build the place; it cannot
+   rewrite the memory.
 
 The public judge path is a verified deterministic replay with its fallback trace shown in-product. It proves the
 runtime and validation journey without implying that GPT-5.6 or Codex ran live during that browser session.

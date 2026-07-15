@@ -626,7 +626,9 @@ def capture(browser: Browser) -> None:
     if should_capture("03-source-desk"):
         context, page = new_page(browser)
         open_source_desk(page)
-        set_page_zoom(page, 1.14)
+        # Frame the one disputed claim as a readable product moment instead of
+        # asking an embedded-video viewer to scan the full review sheet.
+        set_page_zoom(page, 1.35)
         uncertain = page.get_by_text("The bicycle belonged to someone in the storyteller's family.")
         smooth_reveal(page, uncertain)
         shot_started = time.monotonic()
@@ -642,7 +644,14 @@ def capture(browser: Browser) -> None:
         glide_click(page, preserve)
         kept_uncertain = page.get_by_text("Kept uncertain", exact=True).last
         kept_uncertain.wait_for()
-        pause(page, 7.55)
+        show_cinematic_beat(
+            page,
+            "Human decision",
+            "Kept uncertain. Not confirmed as fact.",
+            side="left",
+            duration=2.8,
+        )
+        pause(page, 7.35)
         save_clip(context, page, "03-source-desk", shot_started)
 
     if should_capture("04-codex"):
@@ -666,13 +675,26 @@ def capture(browser: Browser) -> None:
             "link",
             name=re.compile(r"Verified live Codex SDK run", re.IGNORECASE),
         )
+        # Move from the role overview to a legible receipt close-up. This is
+        # the actual in-product link, not a recreated proof graphic.
+        set_page_zoom(page, 1.32)
         smooth_reveal(page, live_proof, duration=0.65)
-        pause(page, 11.8)
+        show_cinematic_beat(
+            page,
+            "Public replay",
+            "Verified live Codex SDK run.",
+            side="left",
+            duration=2.4,
+        )
+        pause(page, 10.1)
         save_clip(context, page, "04-codex", shot_started)
 
     if should_capture("05-lantern"):
         context, page = new_page(browser)
         enter_exhibit(page, 0, "Lantern Lane, 1998")
+        # Give the launched exhibit a clean pre-roll so no approval-gate frame
+        # survives Playwright's small video/wall-clock offset.
+        pause(page, 0.5)
         shot_started = time.monotonic()
         spatial = page.get_by_role(
             "region",
@@ -712,6 +734,7 @@ def capture(browser: Browser) -> None:
     if should_capture("06-repair"):
         context, page = new_page(browser)
         enter_exhibit(page, 1, "Four Moves at the Repair Bench")
+        pause(page, 0.5)
         shot_started = time.monotonic()
         show_cinematic_beat(
             page,
@@ -759,10 +782,14 @@ def capture(browser: Browser) -> None:
             raise RuntimeError(f"Pinned GitHub receipt did not preload: HTTP {status}")
         page.get_by_text("codexSdkVersion", exact=False).first.wait_for(timeout=60_000)
         set_page_zoom(page, 1.34)
-        shot_started = time.monotonic()
         hide_cursor(page)
         show_engineering_overlay(page)
-        pause(page, 7.4)
+        # Start only after the proof card is fully opaque. Playwright video
+        # timestamps can precede Python's wall clock by a few frames, so
+        # recording the fade used to expose a distracting GitHub flash at the
+        # chapter boundary.
+        shot_started = time.monotonic()
+        pause(page, 8.0)
         hide_overlay(page, "keepscape-engineering-proof")
         pause(page, 1.35)
         save_clip(context, page, "07-engineering", shot_started)

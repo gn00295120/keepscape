@@ -2,11 +2,11 @@
 
 > **Walk into a true story.**
 
-Keepscape turns three to five real photos and an original spoken memory into a source-grounded, walkable
-memory space. GPT-5.6 produces a strict source-linked story blueprint; the host compiles the supplied photos
-into a safe diorama; a person resolves uncertain claims and reviews the displayed generated story copy; Codex
-compiles the reviewed mechanic from opaque tokens and returns a bounded spatial plan; the host rebinds and
-validates those structures; and the person approves the final interaction state before entry.
+Keepscape turns three to five real photos and a remembered story—spoken or written—into a source-grounded,
+walkable memory space. GPT-5.6 produces a strict source-linked story blueprint; the host compiles the supplied
+photos into a safe diorama; a person resolves uncertain claims and reviews the displayed generated story copy;
+Codex compiles the reviewed mechanic from opaque tokens and returns a bounded spatial plan; the host rebinds
+and validates those structures; and the person approves the final interaction state before entry.
 
 This is not a slideshow, photogrammetry, NeRF, or an AI recreation of a person. The browser space is a generated
 spatial interpretation—not recovered geometry. Every factual detail resolves to an inspectable source or an
@@ -26,8 +26,9 @@ visible fallback trace, not a disguised live GPT-5.6 or Codex run:
 3. Choose **Lantern Lane, 1998** to move through a three-photo memory corridor and collect its source-backed
    lanterns.
 4. Return to the studio and choose **Four Moves at the Repair Bench** to play an ordered repair ritual.
-5. Turn on **Evidence Lens**, then open an object to inspect its cited source view, audio timecode, and
-   provenance status. The manually calibrated judge fixture also outlines a reviewed photo region.
+5. Turn on **Evidence Lens** and select an object. Its **Truth Thread** resolves the cited photo crop, audio
+   timecode, human decision, and interpretation boundary in the same frame; the full archive remains one click
+   away.
 6. On the build screen, inspect **Build evidence** to see the actual run trace, checked artifact receipt, and
    validation results behind the exhibit.
 
