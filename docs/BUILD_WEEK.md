@@ -24,7 +24,7 @@ Last verified: 2026-07-16 (Asia/Taipei)
 - A working project that uses Codex and integrates GPT-5.6 into product behavior.
 - Exactly one category: Apps for Your Life, Work & Productivity, Developer Tools, or Education.
 - An English project description.
-- A public YouTube demo with narration, strictly under three minutes. Current release candidate: 1:29.261.
+- A public YouTube demo with narration, strictly under three minutes. Published video: 1:29.261.
 - A public repository with a relevant license, or a private repository shared with both judging addresses.
 - A README with setup, sample data, run/test guidance, Codex workflow, human decisions, and concrete
   GPT-5.6 usage.
@@ -46,20 +46,22 @@ shown or proven in the demo is lower priority than an end-to-end capability that
 ## Current external state
 
 - Devpost registration exists.
-- Project `1330616` exists as an empty `submission_pre_draft`; it is not a final submission.
+- Project `1330616` / submission `1082453` is published and **Submitted** to OpenAI Build Week:
+  <https://devpost.com/software/keepscape>.
 - Final product name: **Keepscape**. Category: **Apps for Your Life**.
 - Public repository: <https://github.com/gn00295120/keepscape>.
 - Hosted judge experience: <https://keepscape.lucasfutures-h1-20260507.workers.dev>, deployed from commit
   `609e905d3dc664f581c91564c52cbc686f44ff35`.
-- The Devpost draft has not yet been populated with the prepared description, repository, hosted URL, video,
-  or session ID.
-- An 89.261-second release candidate with single-model OpenAI audio API narration has been rendered and validated; public
-  YouTube upload is still pending.
-- Core Build Week Codex thread / `/feedback` candidate: `019f62dd-efe8-7e41-96b6-5293d13b88cb`.
+- The Devpost entry includes the final description, technology list, public repository, hosted judge path,
+  judge instructions, category, thumbnail, video, and core Codex session ID.
+- Public 89.261-second demo: <https://youtu.be/PZiV8iiFez8>.
+- Submitted at 2026-07-16 20:49:53 GMT+8; live submission, thumbnail, hosted app, and repository all returned
+  HTTP 200 after submission.
+- Core Build Week Codex thread / `/feedback` session: `019f62dd-efe8-7e41-96b6-5293d13b88cb`.
 
 ## Submission form fields
 
-Verified through the Devpost plugin on 2026-07-15:
+Verified through the Devpost plugin on 2026-07-16:
 
 - `27945` — Submitter Type (required)
 - `27946` — Country of Residence (required; Taiwan is an available option)
