@@ -29,12 +29,12 @@ OpenAI, Codex, GPT-5.6, AI, spatial computing, 3D web, family memories, provenan
 
 ## Upload assets
 
-- Final video: 87.954 seconds, native 1920×1080 at 25 fps, H.264 video with 48 kHz stereo AAC audio.
-- Captions: 18-cue UTF-8 SubRip file; final cue ends at 87.026 seconds.
+- Final video: 89.261 seconds, native 1920×1080 at 25 fps, H.264 video with 48 kHz stereo AAC audio.
+- Captions: 18-cue UTF-8 SubRip file; final cue ends at 88.340 seconds.
 - Thumbnail: 16:9 Evidence Lens / Truth Thread frame from the working exhibit.
 - Capture source: production deployment at Git commit `609e905d3dc664f581c91564c52cbc686f44ff35`.
-- Video SHA-256: `60fe482770f489a373d7c11368326757f6b6b59f8a1a6dc351840b0b89d8d077`
-- Captions SHA-256: `17d713ad47545b0b7b7112cffe6cc1bf8f12dfea28f32a0ca18c25e5c33ea47b`
+- Video SHA-256: `49c381e63e742345758da700d475374cda9b7e05325f5f5cb06d3ebedc875e53`
+- Captions SHA-256: `f2fa080edeffa73d9e8749f547ad56b708fc21f1d84ef3acebbd226fd1897666`
 - Thumbnail SHA-256: `44231e9d98ea155b35b54a003946a072fafa1fef53a0a2a5bb0e157ba9c4c269`
 
 ## Audience setting
@@ -55,7 +55,7 @@ Select **No, it's not made for kids**. Do not apply an age restriction.
 - **Allow embedding:** On. Devpost must be able to embed the public video.
 - **Publish to subscriptions feed / notify subscribers:** Off.
 - **Shorts remixing:** Off.
-- **Automatic chapters and key moments:** Off; preserve the deliberate 88-second cut.
+- **Automatic chapters and key moments:** Off; preserve the deliberate 89-second cut.
 - **Recording date:** Leave blank.
 - **Video location / featured places:** Leave blank or off; the demonstrated archive is fictional.
 - **Comments:** On, with potentially inappropriate comments held for review.

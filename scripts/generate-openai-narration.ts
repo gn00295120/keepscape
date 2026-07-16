@@ -15,12 +15,9 @@ import OpenAI from "openai";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const DEFAULT_NARRATION = join(ROOT, "docs", "DEMO_NARRATION.md");
-const DEFAULT_OUTPUT = "/tmp/keepscape-demo/openai-hybrid-marin";
-const DEFAULT_MODEL = "hybrid";
+const DEFAULT_OUTPUT = "/tmp/keepscape-demo/openai-audio15-marin";
+const DEFAULT_MODEL = "gpt-audio-1.5";
 const DEFAULT_VOICE = "marin";
-const CHAT_AUDIO_MODEL = "gpt-audio-1.5";
-const SPEECH_MODEL = "gpt-4o-mini-tts-2025-12-15";
-const CHAT_AUDIO_SEGMENTS = new Set([4, 7]);
 const SEGMENT_NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8] as const;
 
 const DEFAULT_SEGMENT_SPEEDS: Record<number, number> = {
@@ -80,6 +77,7 @@ const EDITORIAL_MAX_DURATIONS: Record<number, number> = {
 
 const BASE_DIRECTION = [
   "Warm, grounded adult documentary narrator with a soft lower-mid register and neutral North American English.",
+  "Keep the same speaker identity, vocal age, accent, microphone distance, pitch range, energy, and emotional temperature in every clip.",
   "Speak as if guiding one person through a dim family archive at night: intimate, human, quietly confident, and emotionally present without sentimentality.",
   "Use restrained wonder, never a commercial, corporate explainer, audiobook character, or movie-trailer delivery.",
   "Use natural micro-breaths and meaningful pauses without leaving dead air.",
@@ -262,11 +260,6 @@ function usesChatAudio(model: string): boolean {
   return model.startsWith("gpt-audio");
 }
 
-function modelForSegment(configuredModel: string, number: number): string {
-  if (configuredModel !== "hybrid") return configuredModel;
-  return CHAT_AUDIO_SEGMENTS.has(number) ? CHAT_AUDIO_MODEL : SPEECH_MODEL;
-}
-
 function trimAndPadVoice(input: string, output: string): void {
   const trimStart = "silenceremove=start_periods=1:start_duration=0.02:start_threshold=-50dB:start_silence=0.02";
   const filter = `${trimStart},areverse,${trimStart},areverse,adelay=120:all=1,apad=pad_dur=0.18`;
@@ -303,7 +296,7 @@ async function generateRawVoice(
   text: string,
   rawPath: string,
 ): Promise<string | null> {
-  const model = modelForSegment(options.model, number);
+  const model = options.model;
   if (usesChatAudio(model)) {
     const [minimumSeconds, maximumSeconds] = AUDIO_DURATION_RANGES[number];
     const [minimumWpm, maximumWpm] = AUDIO_WPM_RANGES[number];
@@ -365,7 +358,7 @@ async function main(): Promise<void> {
   const options = parseOptions(process.argv.slice(2));
   const narration = parseNarration(options.narrationPath);
   const selected = SEGMENT_NUMBERS.filter((number) => !options.only || options.only.has(number));
-  const hasChatAudio = selected.some((number) => usesChatAudio(modelForSegment(options.model, number)));
+  const hasChatAudio = usesChatAudio(options.model);
   if (hasChatAudio && options.speed !== null) {
     throw new Error("--speed is unavailable for gpt-audio models; their per-segment timing is prompt-controlled");
   }
@@ -376,7 +369,7 @@ async function main(): Promise<void> {
   for (const number of selected) {
     const text = narration.get(number);
     const speed = options.speed ?? DEFAULT_SEGMENT_SPEEDS[number];
-    const model = modelForSegment(options.model, number);
+    const model = options.model;
     const chatAudio = usesChatAudio(model);
     const timing = chatAudio
       ? `prompt ${AUDIO_DURATION_RANGES[number][0].toFixed(1)}–${AUDIO_DURATION_RANGES[number][1].toFixed(1)}s`
@@ -404,7 +397,7 @@ async function main(): Promise<void> {
     const label = String(number).padStart(2, "0");
     const text = narration.get(number);
     const speed = options.speed ?? DEFAULT_SEGMENT_SPEEDS[number];
-    const chatAudio = usesChatAudio(modelForSegment(options.model, number));
+    const chatAudio = usesChatAudio(options.model);
     if (!text) throw new Error(`Internal narration lookup failed for segment ${label}`);
 
     const wavPath = join(options.outputDir, `${label}.wav`);

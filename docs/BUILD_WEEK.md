@@ -1,6 +1,6 @@
 # OpenAI Build Week submission truth
 
-Last verified: 2026-07-15 (Asia/Taipei)
+Last verified: 2026-07-16 (Asia/Taipei)
 
 ## Authoritative links
 
@@ -24,7 +24,7 @@ Last verified: 2026-07-15 (Asia/Taipei)
 - A working project that uses Codex and integrates GPT-5.6 into product behavior.
 - Exactly one category: Apps for Your Life, Work & Productivity, Developer Tools, or Education.
 - An English project description.
-- A public YouTube demo with narration, strictly under three minutes. Current release candidate: 1:27.954.
+- A public YouTube demo with narration, strictly under three minutes. Current release candidate: 1:29.261.
 - A public repository with a relevant license, or a private repository shared with both judging addresses.
 - A README with setup, sample data, run/test guidance, Codex workflow, human decisions, and concrete
   GPT-5.6 usage.
@@ -53,7 +53,7 @@ shown or proven in the demo is lower priority than an end-to-end capability that
   `609e905d3dc664f581c91564c52cbc686f44ff35`.
 - The Devpost draft has not yet been populated with the prepared description, repository, hosted URL, video,
   or session ID.
-- An 87.954-second v5 release candidate with OpenAI audio API narration has been rendered and validated; public
+- An 89.261-second release candidate with single-model OpenAI audio API narration has been rendered and validated; public
   YouTube upload is still pending.
 - Core Build Week Codex thread / `/feedback` candidate: `019f62dd-efe8-7e41-96b6-5293d13b88cb`.
 
