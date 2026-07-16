@@ -21,7 +21,7 @@ https://keepscape.lucasfutures-h1-20260507.workers.dev
 Source code, setup, tests, decision log, and redacted live Codex receipt:
 https://github.com/gn00295120/keepscape
 
-The included demo photos and narration are AI-generated fictional material. Keepscape produces a generated spatial interpretation—not a scan, photogrammetric reconstruction, or recovered geometry.
+The included demo photos are AI-generated fictional material; the demo narration was generated with the OpenAI audio API. Keepscape produces a generated spatial interpretation—not a scan, photogrammetric reconstruction, or recovered geometry.
 
 ## Suggested tags
 
@@ -29,12 +29,12 @@ OpenAI, Codex, GPT-5.6, AI, spatial computing, 3D web, family memories, provenan
 
 ## Upload assets
 
-- Final video: 88.371 seconds, native 1920×1080 at 25 fps, H.264 video with 48 kHz stereo AAC audio.
-- Captions: 18-cue UTF-8 SubRip file; final cue ends at 87.450 seconds.
+- Final video: 87.954 seconds, native 1920×1080 at 25 fps, H.264 video with 48 kHz stereo AAC audio.
+- Captions: 18-cue UTF-8 SubRip file; final cue ends at 87.026 seconds.
 - Thumbnail: 16:9 Evidence Lens / Truth Thread frame from the working exhibit.
 - Capture source: production deployment at Git commit `609e905d3dc664f581c91564c52cbc686f44ff35`.
-- Video SHA-256: `daf60c0e8e9bbdc86025d2b51ca8fc33e6e0aa16822b964a90664073793c9f90`
-- Captions SHA-256: `473dbeb02304d50baeeb9d9ba611a8eb1620a07fdd42f982d553184c0e8873a1`
+- Video SHA-256: `60fe482770f489a373d7c11368326757f6b6b59f8a1a6dc351840b0b89d8d077`
+- Captions SHA-256: `17d713ad47545b0b7b7112cffe6cc1bf8f12dfea28f32a0ca18c25e5c33ea47b`
 - Thumbnail SHA-256: `44231e9d98ea155b35b54a003946a072fafa1fef53a0a2a5bb0e157ba9c4c269`
 
 ## Audience setting

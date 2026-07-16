@@ -35,6 +35,10 @@ SAY_VOICE = "Samantha"
 SAY_RATE = 140
 TAIL_PAUSE_SECONDS = 0.9
 MAX_CLONED_FRAME_SECONDS = 0.35
+# The proof-card animation masks the GitHub receipt until late in segment 07.
+# Preserve enough of that shot for judges to inspect the actual JSON before the
+# closing card, even when a concise voice take finishes early.
+MIN_SEGMENT_DURATIONS = {7: 10.32}
 MAX_FINAL_DURATION_SECONDS = 179.0
 # Leave room for frame and AAC timestamp rounding while preserving the hard 179s gate.
 ENCODE_SAFETY_MARGIN_SECONDS = 0.75
@@ -246,7 +250,10 @@ def synthesize_voice(segment: DemoSegment) -> None:
                 f"{segment.number:02d}",
             )
         segment.voice_duration = probe_duration(segment.voice_path)
-        segment.target_duration = segment.voice_duration + TAIL_PAUSE_SECONDS
+        segment.target_duration = max(
+            segment.voice_duration + TAIL_PAUSE_SECONDS,
+            MIN_SEGMENT_DURATIONS.get(segment.number, 0.0),
+        )
         return
 
     segment.voice_path.unlink(missing_ok=True)
@@ -264,7 +271,10 @@ def synthesize_voice(segment: DemoSegment) -> None:
         ],
     )
     segment.voice_duration = probe_duration(segment.voice_path)
-    segment.target_duration = segment.voice_duration + TAIL_PAUSE_SECONDS
+    segment.target_duration = max(
+        segment.voice_duration + TAIL_PAUSE_SECONDS,
+        MIN_SEGMENT_DURATIONS.get(segment.number, 0.0),
+    )
 
 
 def render_segment(segment: DemoSegment) -> None:

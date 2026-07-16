@@ -17,6 +17,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "voice:openai": "tsx scripts/generate-openai-narration.ts",
     "verify:codex": "tsx scripts/verify-live-codex.ts",
     "check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "cf:build": "opennextjs-cloudflare build",

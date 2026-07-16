@@ -5,8 +5,8 @@ Each numbered paragraph maps to the identically numbered browser clip produced b
 
 ## 01 — The transformation
 
-A handful of photographs and a remembered voice become somewhere you can enter. Keepscape turns a forgotten
-camera roll into a living place—without changing what really happened.
+A few photographs. One remembered voice. Together, they become a place you can enter. Keepscape turns a
+forgotten camera roll into a living place—without changing what really happened.
 
 ## 02 — The promise
 
@@ -15,7 +15,7 @@ audio timecode, human decision. Wonder gets a receipt, in plain sight.
 
 ## 03 — The source desk
 
-GPT-5.6 finds the pattern. A person protects the truth. When the archive cannot prove who owned the bicycle,
+GPT-5.6 finds the pattern. A person protects the truth. When the archive cannot prove the bicycle's owner,
 Keepscape preserves the uncertainty.
 
 ## 04 — Codex and the host gate
@@ -25,7 +25,7 @@ bounded interaction. The public replay links to a verified live SDK receipt.
 
 ## 05 — Lantern Lane
 
-Then the interface falls quiet. Painted, tasseled, pale—three lanterns return to their sources, and the whole
+Then the interface falls quiet. Painted. Tasseled. Pale. Three lanterns return to their sources, and the whole
 archive awakens around you.
 
 ## 06 — Repair Bench
