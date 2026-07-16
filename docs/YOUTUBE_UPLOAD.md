@@ -6,8 +6,8 @@ Keepscape — Walk into a true story | OpenAI Build Week
 
 ## Visibility
 
-**Public**, published immediately. Do not use Unlisted, Private, Schedule, or Premiere. Wait for YouTube's
-copyright/likeness checks and 1080p processing to finish before publishing.
+Select **Public**. Do not use Unlisted, Private, Schedule, or Premiere. Before clicking Publish, wait for
+YouTube's copyright/likeness checks and 1080p processing to finish.
 
 ## Description
 
